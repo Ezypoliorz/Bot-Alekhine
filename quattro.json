@@ -1,0 +1,74 @@
+{
+    "Appariements" : {
+        "Quattro du Roi" : [
+            "DE HOOGHE Albert",
+            "PAILLARD Eliott",
+            "JOUSSET Tom",
+            "DAVID Sébastien"
+        ],
+        "Quattro de la Dame" : [
+            "BARON Jacques",
+            "BOUVIER MENARD Bilal",
+            "ABLIN DE CLAVERIE Timéo",
+            "SECHERY Dominique"
+        ],
+        "Quattro de la Tour" : [
+            "RAMANOARA Nathan",
+            "MIOSSEC Gael",
+            "BESSOU Faustin",
+            "PONSARD Anthony"
+        ],
+        "Quattro du Roque" : [
+            "GIL Miguel",
+            "MUSSARD Cristophe",
+            "PANTHOU Sacha",
+            "REFUVEILLE Sylvain"
+        ],
+        "Quattro du Fou" : [
+            "BOUTRY Yanis",
+            "MABIRE David",
+            "PASQUET Pierre",
+            "HU Jérémy"
+        ],
+        "Quattro du Fianchetto" : [
+            "MONPELLIER Alain",
+            "CARDON Cristophe",
+            "HAMMER Titouan",
+            "POMIES Toan"
+        ],
+        "Quattro du Cavalier" : [
+            "HU Enzo",
+            "MAZEURE Oscar",
+            "AUVRAY Alban",
+            "VAUBOURG Eric"
+        ],
+        "Quattro de la Fourchette" : [
+            "MUSSARD Thomas",
+            "CRESCENCE Antoine",
+            "JACOLIN-BUFFARD Guillaume",
+            "BLOTIERE Raphael"
+        ],
+        "Quattro du Pion" : [
+            "BAILO Thomas",
+            "GHADRI Ayman",
+            "MOTIN Eric",
+            "HENRY Georges"
+        ]
+    },
+    "Dates" : [
+        "04/10/25",
+        "08/11/25",
+        "03/01/26",
+        "14/02/26",
+        "09/05/26",
+        "30/05/26"
+    ],
+    "Matches" : [
+        [0, 1, 2, 3],
+        [0, 2, 1, 3],
+        [2, 1, 3, 0],
+        [1, 0 ,3, 2],
+        [2, 0, 3, 1],
+        [0, 3, 1, 2]
+    ]
+}
