@@ -4,6 +4,7 @@ from discord import app_commands
 from discord.ui import Select, View
 import données_ffe
 import json
+import os
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -195,4 +196,4 @@ async def bouton_test_command(interaction: discord.Interaction):
         ephemeral=False
     )
 
-bot.run(DISCORD_TOKEN)
+bot.run(os.environ.get('DISCORD_TOKEN'))
