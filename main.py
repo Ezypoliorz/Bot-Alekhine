@@ -178,5 +178,4 @@ class DropdownMenuQuattro(View) :
 async def quattro_command(interaction: discord.Interaction):
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
 
-#bot.run(os.environ.get('DISCORD_TOKEN'))
-bot.run('MTQzNjA1OTE1OTI2MTg3NjQxNw.GaJkml.s3h10FIZCJbE1G9DpJ-VW8TKoyEj6vDl1WZZUs')
+bot.run(os.environ.get('DISCORD_TOKEN'))
