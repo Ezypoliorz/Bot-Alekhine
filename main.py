@@ -5,6 +5,8 @@ from discord.ui import Select, View
 import données_ffe
 import json
 import os
+import threading
+from flask import Flask
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -37,6 +39,18 @@ async def on_ready():
     with open('joueurs.json', 'w', encoding='utf-8') as fichier :
         players = json.dump(players, fichier, ensure_ascii=False)
     print("Prêt !")
+
+def run_server():
+    app = Flask('') 
+    
+    @app.route('/')
+    def home():
+        return "Bot is running and kept alive!"
+
+    port = int(os.environ.get('PORT', 8080))
+    print(f"Démarrage du serveur web sur le port {port}...")
+    
+    app.run(host='0.0.0.0', port=port)
 
 @tree.command(name="ping", description="Répond avec la latence du bot.")
 async def ping_command(interaction: discord.Interaction):
@@ -178,4 +192,9 @@ class DropdownMenuQuattro(View) :
 async def quattro_command(interaction: discord.Interaction):
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
 
-bot.run(os.environ.get('DISCORD_TOKEN'))
+if __name__ == '__main__':
+
+    t = threading.Thread(target=run_server)
+    t.start()
+
+    bot.run(os.environ.get('DISCORD_TOKEN'))
