@@ -7,7 +7,7 @@ import json
 import os
 import threading
 from flask import Flask
-from datetime import datetime, date, timedelta, timezone, time
+from datetime import datetime, timedelta, timezone, time
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -42,7 +42,7 @@ async def daily_data_update():
     with open('tournois.json', 'r', encoding='utf-8') as fichier :
         tournaments = json.load(fichier)
     
-    today = date.today()
+    today = datetime.date.today()
     soon_tournaments = ""
     for tournament in tournaments :
         date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
