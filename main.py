@@ -45,7 +45,7 @@ async def on_ready():
     )
     embed.set_footer(text="Bot Caen Alekhine")
     channel = bot.get_channel(1436057794725023824)
-    await channel.send(embed=embed, ephemeral=False)
+    await channel.send(embed=embed)
 
 def run_server():
     app = Flask('') 
