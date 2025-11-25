@@ -43,7 +43,7 @@ async def daily_data_update():
         tournaments = json.load(fichier)
     
     today = date.today()
-    soon_tournaments = ""
+    soon_tournaments = []
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
         if abs(today - tournament_date) <= timedelta(days=30) :
