@@ -38,7 +38,14 @@ async def on_ready():
                     break
     with open('joueurs.json', 'w', encoding='utf-8') as fichier :
         players = json.dump(players, fichier, ensure_ascii=False)
-    print("Prêt !")
+    print("🟢 Bot up and running")
+    embed = discord.Embed(
+        title="🟢 Bot up and running",
+        color=discord.Color.green()
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    channel = bot.get_channel(1436057794725023824)
+    await channel.send(embed=embed, ephemeral=False)
 
 def run_server():
     app = Flask('') 
