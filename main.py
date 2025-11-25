@@ -7,7 +7,7 @@ import json
 import os
 import threading
 from flask import Flask
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -16,7 +16,7 @@ intents.members = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 tree = bot.tree
 
-@tasks.loop(time=datetime.time(hour=9, minute=0, tzinfo=datetime.astimezone.utc))
+@tasks.loop(time=datetime.time(hour=9, minute=0, tzinfo=datetime.timezone.utc))
 async def daily_data_update():    
     print("Mise à jour quotidienne des données...")
     
