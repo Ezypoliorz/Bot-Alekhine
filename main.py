@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 from discord.ui import Select, View
 import données_ffe
@@ -7,6 +7,7 @@ import json
 import os
 import threading
 from flask import Flask
+from datetime import datetime, date, timedelta
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -14,6 +15,56 @@ intents.members = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 tree = bot.tree
+
+@tasks.loop(time=datetime.time(hour=9, minute=0, tzinfo=datetime.timezone.utc))
+async def daily_data_update():    
+    print("Mise à jour quotidienne des données...")
+    
+    données_ffe.fetch_players()
+    données_ffe.fetch_tournaments()
+    
+    with open('joueurs.json', 'r', encoding='utf-8') as fichier:
+        players = json.load(fichier)
+
+    guild = bot.get_guild(1436057737657192648)
+    if guild:
+        for member in guild.members:
+            nick = member.nick
+            if nick:
+                for player in players:
+                    if player["NomComplet"].lower() == nick.lower():
+                        player["NomDiscord"] = member.name
+                        break
+        
+        with open('joueurs.json', 'w', encoding='utf-8') as fichier :
+            json.dump(players, fichier, ensure_ascii=False)
+    
+    with open('tournois.json', 'r', encoding='utf-8') as fichier :
+        tournaments = json.load(fichier)
+    
+    today = date.today()
+    soon_tournaments = ""
+    for tournament in tournaments :
+        date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
+        if abs(today - date) <= timedelta(days=30) :
+            soon_tournaments.append(tournament)
+    
+    if len(soon_tournaments) != 0 :
+        embed = discord.Embed(
+            title=f"Nouveaux tournois dans moins d'un mois !",
+            color=discord.Color.yellow()
+        )
+        for tournament in soon_tournaments :
+            embed.add_field(
+                name=f'{tournament["NomTournoi"]}',
+                value=f'{tournament["Date"]} - {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
+                inline=False
+            )
+    embed.set_footer(text="Bot Caen Alekhine")
+    channel = bot.get_channel(1436057738433003692)
+    await channel.send(embed=embed)
+
+    print("Fin de la mise à jour quotidienne des données")
 
 @bot.event
 async def on_ready():
@@ -23,24 +74,17 @@ async def on_ready():
         print(f"Synchronisé")
     except Exception as e:
         print(e)
+    
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
-    données_ffe.fetch_players()
-    données_ffe.fetch_tournaments()
-    guild = bot.get_guild(1436057737657192648)
-    with open('joueurs.json', 'r', encoding='utf-8') as fichier :
-        players = json.load(fichier)
-    for member in guild.members :
-        nick = member.nick
-        if nick :
-            for player in players :
-                if player["NomComplet"].lower() == nick.lower():
-                    player["NomDiscord"] = member.name
-                    break
-    with open('joueurs.json', 'w', encoding='utf-8') as fichier :
-        players = json.dump(players, fichier, ensure_ascii=False)
-    print("🟢 Bot up and running")
+
+    if not daily_data_update.is_running():
+        await daily_data_update()
+    if not daily_data_update.is_running():
+        daily_data_update.start()
+
+    print("Bot up and running")
     embed = discord.Embed(
-        title="🟢 Bot up and running",
+        title="Bot up and running",
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
@@ -86,7 +130,15 @@ async def joueur_command(interaction: discord.Interaction, nom : str):
         players = json.load(fichier)
     with open("index_joueurs.json", 'r', encoding='utf-8') as fichier:
         players_indexes = json.load(fichier)
-    player = players[players_indexes[nom.upper()]]
+    if not nom.upper() in players_indexes :
+        embed = discord.Embed(
+            title="Aucun joueur n'est enregistré à ce nom",
+            color=discord.Color.red()
+        )
+        embed.set_footer(text="Bot Caen Alekhine")
+        await interaction.response.send_message(embed=embed, ephemeral=False)
+        return None
+    player = players[players_indexes[nom.upper()]] 
     embed = discord.Embed(
         title="Info joueur",
         color=discord.Color.green()
