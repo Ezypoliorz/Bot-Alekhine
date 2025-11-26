@@ -51,7 +51,7 @@ async def daily_data_update():
         if message.author == bot.user :
             bot_tournaments += message.content
 
-    print(bot_tournaments)
+    channel.send(bot_tournaments)
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
@@ -120,8 +120,7 @@ async def restart_command(interaction: discord.Interaction):
         color=discord.Color.orange()
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    channel = bot.get_channel(1436057794725023824)
-    await channel.send(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=False)
     
     bot.close()
     os.execv(sys.executable, ['python'] + sys.argv)
