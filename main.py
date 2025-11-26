@@ -65,10 +65,16 @@ async def daily_data_update():
             soon_tournaments.append(tournament)
     
     if len(soon_tournaments) != 0 :
-        embed = discord.Embed(
-            title=f"Nouveaux tournois dans moins d'un mois !",
-            color=discord.Color.yellow()
-        )
+        if len(soon_tournaments) == 1 :
+            embed = discord.Embed(
+                title=f"Nouveau tournoi dans moins d'un mois !",
+                color=discord.Color.yellow()
+            )
+        else :
+            embed = discord.Embed(
+                title=f"Nouveaux tournois dans moins d'un mois !",
+                color=discord.Color.yellow()
+            )
         for tournament in soon_tournaments :
             embed.add_field(
                 name=f'{tournament["NomTournoi"]}',
@@ -77,6 +83,33 @@ async def daily_data_update():
             )
         embed.set_footer(text="Bot Caen Alekhine")
         await channel.send(embed=embed)
+
+    with open('quattro.json', 'r', encoding='utf-8') as fichier :
+        quattro = json.load(fichier)
+    
+    posted_titles = set()
+
+    async for message in channel.history(limit=10) :
+        if message.author == bot.user :
+            for embed in message.embeds :
+                posted_titles.add(embed.title)
+
+    for ronde, date in enumerate(quattro["Dates"]) :
+        tournament_date = datetime.strptime(date, "%d/%m/%Y").date()
+        if (abs(today - tournament_date) <= timedelta(days=7) and 
+            f"Ronde {ronde+1}" not in posted_titles):
+            embed = discord.Embed(
+                title=f"Ronde {ronde+1} de Quattro très bientôt !",
+                description=date,
+                color=discord.Color.yellow()
+            )
+            embed.add_field(
+                value=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !\nSinon, prévenir Maël absolument !',
+                inline=False
+            )
+            embed.set_footer(text="Bot Caen Alekhine")
+            await channel.send(embed=embed)
+            break
 
 @bot.event
 async def on_ready():
@@ -255,7 +288,7 @@ class DropdownMenuQuattro(View) :
 
         embed = discord.Embed(
             title=f"Appariements {poule}",
-            color=discord.Color.orange()
+            color=discord.Color.purple()
         )
         embed.add_field(
             name=f'Joueurs',
