@@ -53,15 +53,15 @@ async def daily_data_update():
         if message.author == bot.user :
             for embed in message.embeds :
                 for field in embed.fields :
-                    posted_tournament_names.add(field.name.strip())
-                    await channel.send(field.name.strip())
+                    posted_tournament_names.add(field.name)
+                    await channel.send(field.name)
     
     await channel.send(str(posted_tournament_names))
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
         
-        tournament_name_to_check = tournament["NomTournoi"].strip()
+        tournament_name_to_check = tournament["NomTournoi"]
         
         if (abs(today - tournament_date) <= timedelta(days=30) and 
             tournament_name_to_check not in posted_tournament_names):
