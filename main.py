@@ -49,7 +49,8 @@ async def daily_data_update():
     bot_tournaments = ""
     async for message in channel.history(limit=100) :
         if message.author == bot.user :
-            bot_tournaments += message.embed.description
+            for embed in message.embeds :
+                bot_tournaments += embed.description
 
     if len(bot_tournaments) != 0 :
         await channel.send(bot_tournaments)
