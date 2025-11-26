@@ -49,9 +49,10 @@ async def daily_data_update():
     bot_tournaments = ""
     async for message in channel.history(limit=100) :
         if message.author == bot.user :
-            bot_tournaments += message.content
+            bot_tournaments += message.embed.description
 
-    await channel.send(bot_tournaments)
+    if len(bot_tournaments) != 0 :
+        await channel.send(bot_tournaments)
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
