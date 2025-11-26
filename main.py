@@ -7,8 +7,7 @@ import json
 import os
 import sys
 import threading
-from flask import Flask, request
-import requests
+from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 import asyncio
 
@@ -108,25 +107,16 @@ async def on_ready():
     await channel.send(embed=embed)
 
 def run_server():
-    global flask_app
-    flask_app = Flask('') 
+    app = Flask('') 
     
-    @flask_app.route('/')
+    @app.route('/')
     def home():
         return "Bot is running and kept alive!"
 
-    @flask_app.route('/shutdown', methods=['POST'])
-    def shutdown():
-        func = request.environ.get('werkzeug.server.shutdown')
-        if func is None:
-            raise RuntimeError('Not running with the Werkzeug Server')
-        func()
-        return 'Server shutting down...'
-        
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT', 8080))
     print(f"Démarrage du serveur web sur le port {port}...")
     
-    flask_app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port)
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
 async def ping_command(interaction: discord.Interaction):
@@ -144,12 +134,6 @@ async def restart_command(interaction: discord.Interaction):
     await asyncio.sleep(0.5)
     
     await bot.close()
-
-    PORT = os.environ.get('PORT', 10000)
-    SHUTDOWN_URL = f'http://127.0.0.1:{PORT}/shutdown'
-    requests.post(SHUTDOWN_URL)
-    await asyncio.sleep(0.75)
-
     os.execv(sys.executable, ['python'] + sys.argv)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
