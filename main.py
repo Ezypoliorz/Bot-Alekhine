@@ -51,7 +51,7 @@ async def daily_data_update():
         if message.author == bot.user :
             bot_tournaments += message.content
 
-    channel.send(bot_tournaments)
+    await channel.send(bot_tournaments)
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
@@ -122,7 +122,7 @@ async def restart_command(interaction: discord.Interaction):
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed, ephemeral=False)
     
-    bot.close()
+    await bot.close()
     os.execv(sys.executable, ['python'] + sys.argv)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
