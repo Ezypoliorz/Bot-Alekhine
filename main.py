@@ -7,8 +7,10 @@ import json
 import os
 import sys
 import threading
-from flask import Flask
+from flask import Flask, request
+import requests
 from datetime import datetime, date, timedelta, timezone, time
+import asyncio
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -63,7 +65,7 @@ async def daily_data_update():
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
-        if abs(today - tournament_date) <= timedelta(days=30) and tournament["NomTournoi"] not in bot_tournaments :
+        if abs(today - tournament_date) <= timedelta(days=30) and not tournament["NomTournoi"] in bot_tournaments :
             soon_tournaments.append(tournament)
     
     if len(soon_tournaments) != 0 :
@@ -106,16 +108,25 @@ async def on_ready():
     await channel.send(embed=embed)
 
 def run_server():
-    app = Flask('') 
+    global flask_app
+    flask_app = Flask('') 
     
-    @app.route('/')
+    @flask_app.route('/')
     def home():
         return "Bot is running and kept alive!"
 
-    port = int(os.environ.get('PORT', 8080))
+    @flask_app.route('/shutdown', methods=['POST'])
+    def shutdown():
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug Server')
+        func()
+        return 'Server shutting down...'
+        
+    port = int(os.environ.get('PORT', 10000))
     print(f"Démarrage du serveur web sur le port {port}...")
     
-    app.run(host='0.0.0.0', port=port)
+    flask_app.run(host='0.0.0.0', port=port)
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
 async def ping_command(interaction: discord.Interaction):
@@ -129,8 +140,16 @@ async def restart_command(interaction: discord.Interaction):
     )
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed, ephemeral=False)
+
+    await asyncio.sleep(0.5)
     
     await bot.close()
+
+    PORT = os.environ.get('PORT', 10000)
+    SHUTDOWN_URL = f'http://127.0.0.1:{PORT}/shutdown'
+    requests.post(SHUTDOWN_URL)
+    await asyncio.sleep(0.75)
+
     os.execv(sys.executable, ['python'] + sys.argv)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
