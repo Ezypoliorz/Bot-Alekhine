@@ -44,9 +44,14 @@ async def daily_data_update():
     
     today = date.today()
     soon_tournaments = []
+    bot_tournaments = ""
+    async for message in channel.history(limit=100) :
+        if message.author == bot.user :
+            bot_tournaments += message.content
+
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
-        if abs(today - tournament_date) <= timedelta(days=30) :
+        if abs(today - tournament_date) <= timedelta(days=30) and tournament["NomTournoi"] not in bot_tournaments :
             soon_tournaments.append(tournament)
     
     if len(soon_tournaments) != 0 :
@@ -188,7 +193,7 @@ async def tournois_command(interaction: discord.Interaction):
     for index, tournament in enumerate(tournaments) :
         embed.add_field(
             name=f'{tournament["NomTournoi"]}',
-            value=f'{tournament["Date"]} - {tournament["Ville"]}',
+            value=f'{tournament["Date"]} - {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
             inline=False
         )
     embed.set_footer(text="Bot Caen Alekhine")
