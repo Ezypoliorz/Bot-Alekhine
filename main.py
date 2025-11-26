@@ -54,15 +54,11 @@ async def daily_data_update():
             for embed in message.embeds :
                 for field in embed.fields :
                     posted_tournament_names.add(field.name)
-                    await channel.send(field.name)
-    
-    await channel.send(str(posted_tournament_names))
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
         
         tournament_name_to_check = tournament["NomTournoi"]
-        await channel.send(tournament_name_to_check)
         
         if (abs(today - tournament_date) <= timedelta(days=30) and 
             tournament_name_to_check not in posted_tournament_names):
@@ -79,8 +75,8 @@ async def daily_data_update():
                 value=f'{tournament["Date"]} - {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
                 inline=False
             )
-    embed.set_footer(text="Bot Caen Alekhine")
-    await channel.send(embed=embed)
+        embed.set_footer(text="Bot Caen Alekhine")
+        await channel.send(embed=embed)
 
 @bot.event
 async def on_ready():
