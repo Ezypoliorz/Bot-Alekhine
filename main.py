@@ -5,6 +5,7 @@ from discord.ui import Select, View
 import données_ffe
 import json
 import os
+import sys
 import threading
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
@@ -50,6 +51,8 @@ async def daily_data_update():
         if message.author == bot.user :
             bot_tournaments += message.content
 
+    print(bot_tournaments)
+
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
         if abs(today - tournament_date) <= timedelta(days=30) and tournament["NomTournoi"] not in bot_tournaments :
@@ -68,8 +71,6 @@ async def daily_data_update():
             )
     embed.set_footer(text="Bot Caen Alekhine")
     await channel.send(embed=embed)
-
-    print("Fin de la mise à jour quotidienne des données")
 
 @bot.event
 async def on_ready():
@@ -108,9 +109,22 @@ def run_server():
     
     app.run(host='0.0.0.0', port=port)
 
-@tree.command(name="ping", description="Répond avec la latence du bot.")
+@tree.command(name="ping", description="Répond avec la latence du bot")
 async def ping_command(interaction: discord.Interaction):
     await interaction.response.send_message(f'Pong! Latence : {round(bot.latency * 1000)}ms', ephemeral=False)
+
+@tree.command(name="restart", description="Redémarre le bot")
+async def restart_command(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Restarting bot...",
+        color=discord.Color.orange()
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    channel = bot.get_channel(1436057794725023824)
+    await channel.send(embed=embed)
+    
+    bot.close()
+    os.execv(sys.executable, ['python'] + sys.argv)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 async def top_10_command(interaction: discord.Interaction):
