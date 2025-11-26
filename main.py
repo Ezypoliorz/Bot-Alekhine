@@ -42,6 +42,7 @@ async def daily_data_update():
     with open('tournois.json', 'r', encoding='utf-8') as fichier :
         tournaments = json.load(fichier)
     
+    channel = bot.get_channel(1436057738433003692)
     today = date.today()
     soon_tournaments = []
     bot_tournaments = ""
@@ -66,7 +67,6 @@ async def daily_data_update():
                 inline=False
             )
     embed.set_footer(text="Bot Caen Alekhine")
-    channel = bot.get_channel(1436057738433003692)
     await channel.send(embed=embed)
 
     print("Fin de la mise à jour quotidienne des données")
