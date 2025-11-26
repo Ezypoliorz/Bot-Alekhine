@@ -62,6 +62,7 @@ async def daily_data_update():
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
         
         tournament_name_to_check = tournament["NomTournoi"]
+        await channel.send(tournament_name_to_check)
         
         if (abs(today - tournament_date) <= timedelta(days=30) and 
             tournament_name_to_check not in posted_tournament_names):
