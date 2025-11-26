@@ -54,9 +54,9 @@ async def daily_data_update():
             for embed in message.embeds :
                 for field in embed.fields :
                     posted_tournament_names.add(field.name.strip())
-                    channel.send(field.name.strip())
+                    await channel.send(field.name.strip())
     
-    channel.send(str(posted_tournament_names))
+    await channel.send(str(posted_tournament_names))
 
     for tournament in tournaments :
         tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
