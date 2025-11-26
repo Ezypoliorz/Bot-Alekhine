@@ -47,13 +47,16 @@ async def daily_data_update():
     today = date.today()
     soon_tournaments = []
     bot_tournaments = ""
-    async for message in channel.history(limit=100) :
+    async for message in channel.history(limit=10) :
         if message.author == bot.user :
             for embed in message.embeds :
                 if embed.title :
                     bot_tournaments += embed.title
                 if embed.description :
                     bot_tournaments += embed.description
+                for field in embed.fields :
+                    bot_tournaments += field.name
+                    bot_tournaments += field.value
 
     if len(bot_tournaments) != 0 :
         await channel.send(bot_tournaments)
