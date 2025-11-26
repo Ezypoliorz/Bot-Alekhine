@@ -50,7 +50,10 @@ async def daily_data_update():
     async for message in channel.history(limit=100) :
         if message.author == bot.user :
             for embed in message.embeds :
-                bot_tournaments += embed.description
+                if embed.title :
+                    bot_tournaments += embed.title
+                if embed.description :
+                    bot_tournaments += embed.description
 
     if len(bot_tournaments) != 0 :
         await channel.send(bot_tournaments)
