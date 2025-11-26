@@ -94,13 +94,13 @@ async def daily_data_update():
             for embed in message.embeds :
                 posted_titles.add(embed.title)
 
-    for ronde, date in enumerate(quattro["Dates"]) :
-        tournament_date = datetime.strptime(date, "%d/%m/%Y").date()
+    for ronde, quattro_date in enumerate(quattro["Dates"]) :
+        tournament_date = datetime.strptime(quattro_date, "%d/%m/%Y").date()
         if (abs(today - tournament_date) <= timedelta(days=7) and 
             f"Ronde {ronde+1}" not in posted_titles):
             embed = discord.Embed(
                 title=f"Ronde {ronde+1} de Quattro très bientôt !",
-                description=date,
+                description=quattro_date,
                 color=discord.Color.yellow()
             )
             embed.add_field(
