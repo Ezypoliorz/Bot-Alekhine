@@ -97,7 +97,7 @@ async def daily_data_update():
     for ronde, quattro_date in enumerate(quattro["Dates"]) :
         tournament_date = datetime.strptime(quattro_date, "%d/%m/%Y").date()
         if (abs(today - tournament_date) <= timedelta(days=7) and 
-            f"Ronde {ronde+1}" not in posted_titles):
+            f"Ronde {ronde+1} de Quattro très bientôt !" not in posted_titles):
             embed = discord.Embed(
                 title=f"Ronde {ronde+1} de Quattro très bientôt !",
                 description=quattro_date,
@@ -105,7 +105,7 @@ async def daily_data_update():
             )
             embed.add_field(
                 name=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !',
-                value=f'Sinon, prévenir Maël absolument !',
+                value=f'Si vous ne pouvez pas, prévenir Maël absolument !',
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
