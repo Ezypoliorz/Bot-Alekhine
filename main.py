@@ -45,30 +45,29 @@ class QuattroReminderView(View) :
         
         for joueur in joueurs :
             if "NomDiscord" in joueur :
-                nom = joueur["NomComplet"]
-                for poule in quattro["Appariements"] :
-                    if nom in poule :
-                        pairings_ronde = quattro["Matches"][self.ronde]
-                        embed = discord.Embed(
-                            title=f"Votre prochain match de Quattro",
-                            color=discord.Color.purple()
-                        )
-                        if nom in [poule[pairings_ronde[0]], poule[pairings_ronde[1]]] :
-                            embed.add_field(
-                                name=f'{poule[pairings_ronde[0]]} ({joueurs[players_indexes[poule[pairings_ronde[0]]]]["Elo"]}) - {poule[pairings_ronde[1]]} ({joueurs[players_indexes[poule[pairings_ronde[1]]]]["Elo"]})',
-                                value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
-                                inline=False
+                if joueur["NomDiscord"] == username :
+                    nom = joueur["NomComplet"]
+                    for poule in quattro["Appariements"] :
+                        if nom in poule :
+                            pairings_ronde = quattro["Matches"][self.ronde]
+                            embed = discord.Embed(
+                                title=f"Votre prochain match de Quattro",
+                                color=discord.Color.purple()
                             )
-                        else :
-                            embed.add_field(
-                                name=f'{poule[pairings_ronde[2]]} ({joueurs[players_indexes[poule[pairings_ronde[2]]]]["Elo"]}) - {poule[pairings_ronde[3]]} ({joueurs[players_indexes[poule[pairings_ronde[3]]]]["Elo"]})',
-                                value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
-                                inline=False
-                            )
-                        embed.set_footer(text="Bot Caen Alekhine")
-                        await interaction.response.send_message(embed=embed)
-                        break
-                    break
+                            if nom in [poule[pairings_ronde[0]], poule[pairings_ronde[1]]] :
+                                embed.add_field(
+                                    name=f'{poule[pairings_ronde[0]]} ({joueurs[players_indexes[poule[pairings_ronde[0]]]]["Elo"]}) - {poule[pairings_ronde[1]]} ({joueurs[players_indexes[poule[pairings_ronde[1]]]]["Elo"]})',
+                                    value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
+                                    inline=False
+                                )
+                            else :
+                                embed.add_field(
+                                    name=f'{poule[pairings_ronde[2]]} ({joueurs[players_indexes[poule[pairings_ronde[2]]]]["Elo"]}) - {poule[pairings_ronde[3]]} ({joueurs[players_indexes[poule[pairings_ronde[3]]]]["Elo"]})',
+                                    value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
+                                    inline=False
+                                )
+                            embed.set_footer(text="Bot Caen Alekhine")
+                            await interaction.response.send_message(embed=embed)
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update():    
