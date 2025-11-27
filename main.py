@@ -26,7 +26,7 @@ class QuattroReminderView(View) :
     
     @discord.ui.Button(
         label="Voir mon match",
-        style=discord.ButtonStyle.purple,
+        style=discord.ButtonStyle.primary,
         custom_id="quattro_reminder_button"
     )
 
