@@ -104,7 +104,8 @@ async def daily_data_update():
                 color=discord.Color.purple()
             )
             embed.add_field(
-                name=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !\nSinon, prévenir Maël absolument !',
+                name=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !',
+                value=f'Sinon, prévenir Maël absolument !',
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
