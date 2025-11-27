@@ -150,6 +150,7 @@ async def daily_data_update():
         tournament_date = datetime.strptime(quattro_date, "%d/%m/%Y").date()
         if (abs(today - tournament_date) <= timedelta(days=7) and 
             f"Ronde {ronde+1} de Quattro très bientôt !" not in posted_titles):
+            quattro_reminder_view = QuattroReminderView(ronde=ronde)
             embed = discord.Embed(
                 title=f"Ronde {ronde+1} de Quattro très bientôt !",
                 description=quattro_date,
@@ -161,7 +162,7 @@ async def daily_data_update():
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
-            await channel.send(embed=embed)
+            await channel.send(embed=embed, view=quattro_reminder_view)
             break
 
 @bot.event
