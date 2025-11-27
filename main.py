@@ -18,6 +18,54 @@ intents.members = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 tree = bot.tree
 
+class QuattroReminderView(View) :
+    def __init__(self, ronde) :
+        super().__init__(timeout=None)
+        self.ronde = ronde
+        self.date = date
+    
+    @discord.ui.Button(
+        label="Voir mon match",
+        style=discord.buttonStyle.purple,
+        custom_id="quattro_reminder_button"
+    )
+
+    async def quattro_reminder_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
+        user = interaction.user
+        username = user.name
+
+        with open('joueurs.json', 'r', encoding='utf-8') as fichier :
+            joueurs = json.load(fichier)
+        
+        with open('quattro.json', 'r', encoding='utf-8') as fichier :
+            quattro = json.load(fichier)
+        
+        with open('index_joueurs.json', 'r', encoding='utf-8') as fichier :
+            players_indexes = json.load(fichier)
+        
+        for joueur in joueur :
+            if "NomDiscord" in joueur :
+                nom = joueur["NomComplet"]
+                for poule in quattro["Appariements"] :
+                    if nom in poule :
+                        pairings_ronde = quattro["Matches"][self.ronde]
+                        embed = discord.Embed(
+                            title=f"Votre prochain match de Quattro",
+                            color=discord.Color.purple()
+                        )
+                        if nom in [poule[pairings_ronde[0]], poule[pairings_ronde[1]]] :
+                            embed.add_field(
+                                name=f'{poule[pairings_ronde[0]]} ({joueurs[players_indexes[poule[pairings_ronde[0]]]]["Elo"]}) - {poule[pairings_ronde[1]]} ({joueurs[players_indexes[poule[pairings_ronde[1]]]]["Elo"]})',
+                                value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
+                                inline=False
+                            )
+                        else :
+                            embed.add_field(
+                                name=f'{poule[pairings_ronde[2]]} ({joueurs[players_indexes[poule[pairings_ronde[2]]]]["Elo"]}) - {poule[pairings_ronde[3]]} ({joueurs[players_indexes[poule[pairings_ronde[3]]]]["Elo"]})',
+                                value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
+                                inline=False
+                            )
+
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update():    
     print("Mise à jour quotidienne des données...")
