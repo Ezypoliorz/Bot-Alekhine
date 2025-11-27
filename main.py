@@ -65,6 +65,10 @@ class QuattroReminderView(View) :
                                 value=f'Ronde {self.ronde+1}\nDate : {quattro["Dates"][self.ronde]}',
                                 inline=False
                             )
+                        embed.set_footer(text="Bot Caen Alekhine")
+                        await interaction.response.send_message(embed=embed)
+                        break
+                    break
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update():    
