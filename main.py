@@ -43,12 +43,17 @@ class QuattroReminderView(View) :
         with open('index_joueurs.json', 'r', encoding='utf-8') as fichier :
             players_indexes = json.load(fichier)
         
+        channel = bot.get_channel(1436057738433003692)
+
         for joueur in joueurs :
             if "NomDiscord" in joueur :
+                channel.send('"NomDiscord" in joueur')
                 if joueur["NomDiscord"] == username :
+                    channel.send('joueur["NomDiscord"] == username')
                     nom = joueur["NomComplet"]
                     for poule in quattro["Appariements"] :
                         if nom in poule :
+                            channel.send('nom in poule')
                             pairings_ronde = quattro["Matches"][self.ronde]
                             embed = discord.Embed(
                                 title=f"Votre prochain match de Quattro",
@@ -67,7 +72,7 @@ class QuattroReminderView(View) :
                                     inline=False
                                 )
                             embed.set_footer(text="Bot Caen Alekhine")
-                            await interaction.response.send_message(embed=embed)
+                            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update():    
