@@ -104,7 +104,7 @@ async def daily_data_update():
                 color=discord.Color.yellow()
             )
             embed.add_field(
-                name="\u200b"
+                name="\u200b",
                 value=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !\nSinon, prévenir Maël absolument !',
                 inline=False
             )
