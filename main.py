@@ -101,11 +101,10 @@ async def daily_data_update():
             embed = discord.Embed(
                 title=f"Ronde {ronde+1} de Quattro très bientôt !",
                 description=quattro_date,
-                color=discord.Color.yellow()
+                color=discord.Color.purple()
             )
             embed.add_field(
-                name="\u200b",
-                value=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !\nSinon, prévenir Maël absolument !',
+                name=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !\nSinon, prévenir Maël absolument !',
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
