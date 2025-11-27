@@ -24,7 +24,7 @@ class QuattroReminderView(View) :
         self.ronde = ronde
         self.date = date
     
-    @discord.ui.Button(
+    @discord.ui.button(
         label="Voir mon match",
         style=discord.ButtonStyle.primary,
         custom_id="quattro_reminder_button"
@@ -43,7 +43,7 @@ class QuattroReminderView(View) :
         with open('index_joueurs.json', 'r', encoding='utf-8') as fichier :
             players_indexes = json.load(fichier)
         
-        for joueur in joueur :
+        for joueur in joueurs :
             if "NomDiscord" in joueur :
                 nom = joueur["NomComplet"]
                 for poule in quattro["Appariements"] :
