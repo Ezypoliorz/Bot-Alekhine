@@ -97,8 +97,8 @@ class QuattroReminderView(View) :
                 j1_name = poule_members[match_indices[0]]
                 j2_name = poule_members[match_indices[1]]
                 
-                j1_elo = joueurs[players_indexes[j1_name.upper()]]['Elo'][:-2]
-                j2_elo = joueurs[players_indexes[j2_name.upper()]]['Elo'][:-2]
+                j1_elo = joueurs[players_indexes[j1_name]]['Elo'][:-2]
+                j2_elo = joueurs[players_indexes[j2_name]]['Elo'][:-2]
                 
                 embed.add_field(
                     name=f'{j1_name} ({j1_elo}) - {j2_name} ({j2_elo})',
