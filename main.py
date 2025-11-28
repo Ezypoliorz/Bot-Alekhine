@@ -33,8 +33,6 @@ class QuattroReminderView(View) :
         user = interaction.user
         username = user.name
         
-        await interaction.response.defer(ephemeral=True)
-
         with open('joueurs.json', 'r', encoding='utf-8') as fichier :
             joueurs = json.load(fichier)
         
@@ -43,11 +41,6 @@ class QuattroReminderView(View) :
         
         with open('index_joueurs.json', 'r', encoding='utf-8') as fichier :
             players_indexes = json.load(fichier)
-
-        await interaction.followup.send(
-                f"Fichiers JSON", 
-                ephemeral=True
-            )
 
         player_nom_complet = None
         for joueur_data in joueurs :
@@ -62,20 +55,9 @@ class QuattroReminderView(View) :
             )
             return
         
-        await interaction.followup.send(
-                f"Nom Discord", 
-                ephemeral=True
-            )
-        
         match_found = False
         for poule_name, poule_members in quattro["Appariements"].items() :
             if player_nom_complet in poule_members :
-                
-                await interaction.followup.send(
-                    f"Vérification poule", 
-                    ephemeral=True
-                )
-
                 pairings_ronde = quattro["Matches"][self.ronde]
                 embed = discord.Embed(
                     title=f"Votre prochain match de Quattro",
@@ -102,7 +84,7 @@ class QuattroReminderView(View) :
                 
                 embed.add_field(
                     name=f'{j1_name} ({j1_elo}) - {j2_name} ({j2_elo})',
-                    value=f'Ronde {self.ronde+1} du **{poule_name}**\nDate : {quattro["Dates"][self.ronde]}',
+                    value=f'Ronde {self.ronde+1} du {poule_name}\nDate : {quattro["Dates"][self.ronde]}',
                     inline=False
                 )
                 
