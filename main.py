@@ -35,6 +35,11 @@ class QuattroReminderView(View) :
         
         await interaction.response.defer(ephemeral=True)
 
+        await interaction.followup.send(
+                f"Got here", 
+                ephemeral=True
+            )
+
         with open('joueurs.json', 'r', encoding='utf-8') as fichier :
             joueurs = json.load(fichier)
         
