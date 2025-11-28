@@ -285,12 +285,15 @@ async def top_10_command(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur")
-async def joueur_command(interaction: discord.Interaction, nom : str):
+async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str):
+    nom = nom.upper()
+    prénom = prénom.capitalize()
+    nom_complet = f"{nom} {prénom}"
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
     with open("index_joueurs.json", 'r', encoding='utf-8') as fichier:
         players_indexes = json.load(fichier)
-    if not nom.upper() in players_indexes :
+    if not nom_complet in players_indexes :
         embed = discord.Embed(
             title="Aucun joueur n'est enregistré à ce nom",
             color=discord.Color.red()
@@ -298,7 +301,7 @@ async def joueur_command(interaction: discord.Interaction, nom : str):
         embed.set_footer(text="Bot Caen Alekhine")
         await interaction.response.send_message(embed=embed, ephemeral=False)
         return None
-    player = players[players_indexes[nom.upper()]] 
+    player = players[players_indexes[nom_complet]] 
     embed = discord.Embed(
         title="Info joueur",
         color=discord.Color.green()

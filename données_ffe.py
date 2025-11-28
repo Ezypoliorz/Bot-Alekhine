@@ -161,7 +161,7 @@ def fetch_players() :
     )
     players_indexes = {}
     for index, player in enumerate(players_sorted) :
-        players_indexes[player["Nom"]] = index
+        players_indexes[player["NomComplet"]] = index
     with open("joueurs.json", 'w', encoding='utf-8') as file :
         json.dump(players_sorted, file, indent=4, ensure_ascii=False)
     with open("index_joueurs.json", 'w', encoding='utf-8') as file :
