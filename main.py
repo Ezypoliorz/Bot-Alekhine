@@ -13,6 +13,7 @@ import asyncio
 
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = os.environ.get('GUILD_ID')
+LOGS_CHANNEL_ID = os.environ.get('LOGS_CHANNEL_ID')
 COMMANDS_CHANNEL_ID = os.environ.get('COMMANDS_CHANNEL_ID')
 TOURNAMENTS_CHANNEL_ID = os.environ.get('TOURNAMENTS_CHANNEL_ID')
 QUATTRO_CHANNEL_ID = os.environ.get('QUATTRO_CHANNEL_ID')
@@ -409,4 +410,4 @@ if __name__ == '__main__':
     t = threading.Thread(target=run_server)
     t.start()
 
-    bot.run()
+    bot.run(DISCORD_TOKEN)
