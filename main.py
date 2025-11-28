@@ -11,6 +11,13 @@ from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 import asyncio
 
+DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
+GUILD_ID = os.environ.get('GUILD_ID')
+COMMANDS_CHANNEL_ID = os.environ.get('COMMANDS_CHANNEL_ID')
+TOURNAMENTS_CHANNEL_ID = os.environ.get('TOURNAMENTS_CHANNEL_ID')
+QUATTRO_CHANNEL_ID = os.environ.get('QUATTRO_CHANNEL_ID')
+TDS_CHANNEL_ID = os.environ.get('TDS_CHANNEL_ID')
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -109,7 +116,7 @@ async def daily_data_update():
     with open('joueurs.json', 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
 
-    guild = bot.get_guild(1436057737657192648)
+    guild = bot.get_guild(GUILD_ID)
     if guild:
         for member in guild.members:
             nick = member.nick
@@ -125,7 +132,7 @@ async def daily_data_update():
     with open('tournois.json', 'r', encoding='utf-8') as fichier :
         tournaments = json.load(fichier)
     
-    channel = bot.get_channel(1436057738433003692)
+    channel = bot.get_channel(TOURNAMENTS_CHANNEL_ID)
     today = date.today()
     soon_tournaments = []
     posted_tournament_names = set()
@@ -187,7 +194,7 @@ async def daily_data_update():
             )
             embed.add_field(
                 name=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !',
-                value=f'Si vous ne pouvez pas, prévenir Maël absolument !',
+                value=f'Si c\'est impossible, prévenir Maël absolument !',
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
@@ -213,10 +220,11 @@ async def on_ready():
     print("Bot up and running")
     embed = discord.Embed(
         title="Bot up and running",
+        description=f"Connected as {bot.user} - ID: {bot.user.id}",
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    channel = bot.get_channel(1436057794725023824)
+    channel = bot.get_channel(COMMANDS_CHANNEL_ID)
     await channel.send(embed=embed)
 
 def run_server():
@@ -401,4 +409,4 @@ if __name__ == '__main__':
     t = threading.Thread(target=run_server)
     t.start()
 
-    bot.run(os.environ.get('DISCORD_TOKEN'))
+    bot.run()
