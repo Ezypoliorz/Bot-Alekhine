@@ -12,12 +12,12 @@ from datetime import datetime, date, timedelta, timezone, time
 import asyncio
 
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
-GUILD_ID = os.environ.get('GUILD_ID')
-LOGS_CHANNEL_ID = os.environ.get('LOGS_CHANNEL_ID')
-COMMANDS_CHANNEL_ID = os.environ.get('COMMANDS_CHANNEL_ID')
-TOURNAMENTS_CHANNEL_ID = os.environ.get('TOURNAMENTS_CHANNEL_ID')
-QUATTRO_CHANNEL_ID = os.environ.get('QUATTRO_CHANNEL_ID')
-TDS_CHANNEL_ID = os.environ.get('TDS_CHANNEL_ID')
+GUILD_ID = int(os.environ.get('GUILD_ID'))
+LOGS_CHANNEL_ID = int(os.environ.get('LOGS_CHANNEL_ID'))
+COMMANDS_CHANNEL_ID = int(os.environ.get('COMMANDS_CHANNEL_ID'))
+TOURNAMENTS_CHANNEL_ID = int(os.environ.get('TOURNAMENTS_CHANNEL_ID'))
+QUATTRO_CHANNEL_ID = int(os.environ.get('QUATTRO_CHANNEL_ID'))
+TDS_CHANNEL_ID = int(os.environ.get('TDS_CHANNEL_ID'))
 
 intents = discord.Intents.default()
 intents.message_content = True
