@@ -26,13 +26,15 @@ class QuattroReminderView(View) :
     @discord.ui.button(
         label="Voir mon match",
         style=discord.ButtonStyle.primary,
-        custom_id="quattro_reminder_button"
+        custom_id="quattro_reminder_button",
     )
 
     async def quattro_reminder_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
         user = interaction.user
         username = user.name
         
+        await interaction.response.defer(ephemeral=True)
+
         with open('joueurs.json', 'r', encoding='utf-8') as fichier :
             joueurs = json.load(fichier)
         
@@ -49,8 +51,8 @@ class QuattroReminderView(View) :
                 break
         
         if player_nom_complet is None:
-            await interaction.response.send_message(
-                f"**{username}**, vous n'êtes pas trouvé dans la liste des joueurs. Vérifiez votre Nom Discord.", 
+            await interaction.followup.send(
+                f"Vous n'êtes pas trouvé dans la liste des joueurs. Vérifiez votre Nom Discord.", 
                 ephemeral=True
             )
             return
@@ -90,7 +92,7 @@ class QuattroReminderView(View) :
                 )
                 
                 embed.set_footer(text="Bot Caen Alekhine")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                await interaction.followup.send(embed=embed, ephemeral=True)
                 match_found = True
                 return
 
@@ -119,7 +121,7 @@ async def daily_data_update():
                     if player["NomComplet"].lower() == nick.lower():
                         player["NomDiscord"] = member.name
                         break
-        
+
         with open('joueurs.json', 'w', encoding='utf-8') as fichier :
             json.dump(players, fichier, ensure_ascii=False)
     
