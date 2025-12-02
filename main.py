@@ -101,7 +101,7 @@ class QuattroReminderView(View) :
                 match_found = True
                 return
 
-        if not match_found:
+        if not match_found :
              await interaction.response.send_message(
                 f"Aucun match n'a été trouvé pour vous dans cette ronde.", 
                 ephemeral=True
