@@ -1,0 +1,36 @@
+{
+    "Joueurs" : [
+        "ABLIN DE CLAVERIE Timéo",
+        "BOUTRY Yanis",
+        "CARDON Christophe",
+        "CHATELAIN Laurent",
+        "GIL Miguel",
+        "HAMMER Titouan",
+        "JOUSSET Tom",
+        "LECANU-DESCHAMPS Olivier",
+        "MABIRE David",
+        "MIOSSEC Gael",
+        "MONPELLIER Alain",
+        "MUSSARD Christophe",
+        "PAILLARD Eliott",
+        "PANTHOU Sacha",
+        "PASQUET Pierre",
+        "PONSARD Anthony",
+        "RAMANOARA Nathan",
+        "SECHERY Dominique",
+        "THEREZE Ludovic",
+        "TISSERANT Clement",
+        "VAUBOURG Eric",
+        "VIOT Gabriel"
+    ],
+
+    "Dates" : [
+        "27/09/2025",
+        "18/10/2025",
+        "22/11/2025",
+        "17/01/2026",
+        "21/03/2026",
+        "02/06/2026",
+        "23/06/2026"
+    ]
+}

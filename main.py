@@ -396,6 +396,7 @@ class DropdownMenuQuattro(View) :
                 value=f'{pairings[poule][matches[i][0]]} - {pairings[poule][matches[i][1]]}\n{pairings[poule][matches[i][2]]} - {pairings[poule][matches[i][3]]}',
                 inline=False
             )
+        
         embed.set_footer(text="Bot Caen Alekhine")
 
         await interaction.delete_original_response()
@@ -404,6 +405,35 @@ class DropdownMenuQuattro(View) :
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
 async def quattro_command(interaction: discord.Interaction):
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
+
+@tree.command(name="tds", description="Affiche la prochaine ronde de TDS")
+async def tds_command(interaction: discord.Interaction):
+    with open('tds.json', 'r', encoding='utf-8') as fichier :
+        tds = json.load(fichier)
+    
+    embed = discord.Embed(
+            title=f"Joueurs TDS",
+            color=discord.Color.purple()
+        )
+    joueurs = ""
+    for joueur in tds["Joueurs"] :
+        joueurs += f"{joueur}\n"
+    embed.add_field(
+        name = "Joueurs",
+        value = joueurs,
+        inline=False
+    )
+    dates = ""
+    for index, date in enumerate(tds["Dates"]) :
+        dates += f"Ronde {index} - {date}"
+    embed.add_field(
+        name = "Dates",
+        value = dates,
+        inline=False
+    )
+
+    embed.set_footer(text="Bot Caen Alekhine")
+    await interaction.response.send_message(embed=embed)
 
 if __name__ == '__main__':
 
