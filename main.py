@@ -268,7 +268,7 @@ async def top_10_command(interaction: discord.Interaction):
     )
     for index, player in enumerate(players) :
         embed.add_field(
-            name=f'#{index+1} - {player["NomComplet"]}',
+            name=f'#{index+1} • {player["NomComplet"]}',
             value=f'{player["Elo"][:-2]} Elo',
             inline=False
         )
@@ -342,7 +342,7 @@ async def tournois_command(interaction: discord.Interaction):
     for index, tournament in enumerate(tournaments) :
         embed.add_field(
             name=f'{tournament["NomTournoi"]}',
-            value=f'{tournament["Date"]} - {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
+            value=f'{tournament["Date"]} • {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
             inline=False
         )
     embed.set_footer(text="Bot Caen Alekhine")
@@ -417,7 +417,7 @@ async def tds_command(interaction: discord.Interaction):
         )
     joueurs = ""
     for index, joueur in enumerate(tds["Joueurs"]) :
-        joueurs += f"• {joueur}\n"
+        joueurs += f"{joueur}\n"
     embed.add_field(
         name = "Joueurs",
         value = joueurs,
@@ -425,7 +425,7 @@ async def tds_command(interaction: discord.Interaction):
     )
     dates = ""
     for index, date in enumerate(tds["Dates"]) :
-        dates += f"__Ronde {index+1}__ - {date}\n"
+        dates += f"Ronde {index+1} • {date}\n"
     embed.add_field(
         name = "Dates",
         value = dates,
