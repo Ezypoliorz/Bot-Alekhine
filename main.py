@@ -416,18 +416,18 @@ async def tds_command(interaction: discord.Interaction):
             color=discord.Color.purple()
         )
     joueurs = ""
-    for joueur in tds["Joueurs"] :
-        joueurs += f"{joueur}\n"
+    for index, joueur in enumerate(tds["Joueurs"]) :
+        joueurs += f"**{index+1}** - {joueur}\n"
     embed.add_field(
-        name = "Joueurs",
+        name = "__Joueurs__",
         value = joueurs,
         inline=False
     )
     dates = ""
     for index, date in enumerate(tds["Dates"]) :
-        dates += f"Ronde {index} - {date}"
+        dates += f"**Ronde {index+1}** - {date}\n"
     embed.add_field(
-        name = "Dates",
+        name = "__Dates__",
         value = dates,
         inline=False
     )
