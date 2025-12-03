@@ -15,6 +15,7 @@ DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
 LOGS_CHANNEL_ID = int(os.environ.get('LOGS_CHANNEL_ID'))
 COMMANDS_CHANNEL_ID = int(os.environ.get('COMMANDS_CHANNEL_ID'))
+ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get('ANNOUNCEMENTS_CHANNEL_ID'))
 TOURNAMENTS_CHANNEL_ID = int(os.environ.get('TOURNAMENTS_CHANNEL_ID'))
 QUATTRO_CHANNEL_ID = int(os.environ.get('QUATTRO_CHANNEL_ID'))
 TDS_CHANNEL_ID = int(os.environ.get('TDS_CHANNEL_ID'))
@@ -201,6 +202,40 @@ async def daily_data_update():
             embed.set_footer(text="Bot Caen Alekhine")
             await channel.send(embed=embed, view=quattro_reminder_view)
             break
+    
+    with open('tds.json', 'r', encoding='utf-8') as fichier :
+        tds = json.load(fichier)
+    
+    posted_titles = set()
+
+    async for message in channel.history(limit=10) :
+        if message.author == bot.user :
+            for embed in message.embeds :
+                posted_titles.add(embed.title)
+
+    for ronde, tds_date in enumerate(tds["Dates"]) :
+        tournament_date = datetime.strptime(tds_date, "%d/%m/%Y").date()
+        if (abs(today - tournament_date) <= timedelta(days=7) and 
+            f"Ronde {ronde+1} de TDS très bientôt !" not in posted_titles):
+            quattro_reminder_view = QuattroReminderView(ronde=ronde)
+            embed = discord.Embed(
+                title=f"Ronde {ronde+1} de TDS très bientôt !",
+                description=quattro_date,
+                color=discord.Color.purple()
+            )
+            embed.add_field(
+                name=f'Merci de prévenir votre adversaire si vous n\'êtes pas disponible !',
+                value=f'Si c\'est impossible, prévenir Maël absolument !',
+                inline=False
+            )
+            embed.add_field(
+                name=f'Appariements',
+                value=f'À retrouver dans <#{ANNOUNCEMENTS_CHANNEL_ID}> !',
+                inline=False
+            )
+            embed.set_footer(text="Bot Caen Alekhine")
+            await channel.send(embed=embed)
+            break
 
 @bot.event
 async def on_ready():
@@ -241,8 +276,40 @@ def run_server():
     app.run(host='0.0.0.0', port=port)
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
-async def ping_command(interaction: discord.Interaction):
+async def ping_command(interaction: discord.Interaction) :
+    embed = discord.Embed(
+        title="Pong !",
+        description=f"Latence : {round(bot.latency * 1000)}ms",
+        color=discord.Color.orange()
+    )
     await interaction.response.send_message(f'Pong! Latence : {round(bot.latency * 1000)}ms', ephemeral=False)
+
+@tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
+async def infos_command(interaction: discord.Interaction) :
+    embed = discord.Embed(
+        title="Informations Bot Alekhine",
+        color=discord.Color.orange()
+    )
+    embed.add_field(
+        name=f'Un bot Discord développé pour le club',
+        value=f'Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine.',
+        inline=False
+    )
+    embed.add_field(
+        name=f'Des commandes',
+        value=f'Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d\'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l\'icône Bot Alekhine, vous verrez toutes les commandes disponibles : `/tournois`, `/quattro`, `/tds`,...\nCes cifférentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...',
+        inline=False
+    )
+    embed.add_field(
+        name=f'Des alertes',
+        value=f'N\'ayez pas peur de manquer un tournoi ! Des alertes pour les tournois sont envoyées automatiquement, avec les informations importantes.',
+        inline=False
+    )
+    embed.add_field(
+        name=f'N\'hésitez pas à nous faire part de vos suggestions !',
+        value=f'© Oscar Mazeure',
+        inline=False
+    )
 
 @tree.command(name="restart", description="Redémarre le bot")
 async def restart_command(interaction: discord.Interaction):
@@ -259,7 +326,7 @@ async def restart_command(interaction: discord.Interaction):
     os.execv(sys.executable, ['python'] + sys.argv)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
-async def top_10_command(interaction: discord.Interaction):
+async def top_10_command(interaction: discord.Interaction) :
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)[:10]
     embed = discord.Embed(
