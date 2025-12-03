@@ -282,7 +282,7 @@ async def ping_command(interaction: discord.Interaction) :
         description=f"Latence : {round(bot.latency * 1000)}ms",
         color=discord.Color.orange()
     )
-    await interaction.response.send_message(f'Pong! Latence : {round(bot.latency * 1000)}ms', ephemeral=False)
+    await interaction.response.send_message(embed=embed)
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
 async def infos_command(interaction: discord.Interaction) :
@@ -310,6 +310,7 @@ async def infos_command(interaction: discord.Interaction) :
         value=f'© Oscar Mazeure',
         inline=False
     )
+    await interaction.response.send_message(embed=embed)
 
 @tree.command(name="restart", description="Redémarre le bot")
 async def restart_command(interaction: discord.Interaction):
