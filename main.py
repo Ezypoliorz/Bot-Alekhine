@@ -10,7 +10,7 @@ import threading
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 import asyncio
-from unicode import unidecode
+from unidecode import unidecode
 
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
