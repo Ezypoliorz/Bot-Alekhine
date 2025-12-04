@@ -280,7 +280,7 @@ async def ping_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Pong !",
         description=f"Latence : {round(bot.latency * 1000)}ms",
-        color=discord.Color.orange()
+        color=discord.Color.green()
     )
     await interaction.response.send_message(embed=embed)
 
@@ -345,7 +345,7 @@ async def top_10_command(interaction: discord.Interaction) :
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur")
 async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str):
-    nom = nom.upper()
+    nom = nom.upper().replace("--", "").replace("É", "E").replace("À", "A").replace("Ë", "E").replace("È", "E")
     prénom = prénom.capitalize()
     nom_complet = f"{nom} {prénom}"
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
@@ -363,7 +363,7 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
     player = players[players_indexes[nom_complet]] 
     embed = discord.Embed(
         title="Info joueur",
-        color=discord.Color.green()
+        color=discord.Color.blue()
     )
     embed.add_field(
         name=f'Nom',
