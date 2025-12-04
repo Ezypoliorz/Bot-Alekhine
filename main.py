@@ -10,6 +10,7 @@ import threading
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 import asyncio
+from unicode import unidecode
 
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
@@ -345,14 +346,19 @@ async def top_10_command(interaction: discord.Interaction) :
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur")
 async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str):
-    nom = nom.upper().replace("--", "").replace("É", "E").replace("À", "A").replace("Ë", "E").replace("È", "E")
-    prénom = prénom.capitalize()
-    nom_complet = f"{nom} {prénom}"
+    nom = unidecode(nom.upper().replace("--", ""))
+    prénom = unidecode(prénom.capitalize())
+    nom_complet_debut = f"{nom} {prénom}"
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
     with open("index_joueurs.json", 'r', encoding='utf-8') as fichier:
         players_indexes = json.load(fichier)
-    if not nom_complet in players_indexes :
+    nom_complet = None
+    for player_index in players_indexes :
+        if nom_complet_debut in unidecode(player_index) :
+            nom_complet = player_index
+            break
+    if nom_complet == None :
         embed = discord.Embed(
             title="Aucun joueur n'est enregistré à ce nom",
             color=discord.Color.red()
