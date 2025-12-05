@@ -348,7 +348,7 @@ async def top_10_command(interaction: discord.Interaction) :
 async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str):
     nom = unidecode(nom.upper())
     prénom = unidecode(prénom.upper())
-    nom_complet_debut = ''.join(caractère for caractère in nom if caractère.isalpha()) + ''.join(caractère for caractère in prénom if caractère.isalpha())
+    nom_complet_debut = ''.join(caractère for caractère in prénom if caractère.isalpha()) + ''.join(caractère for caractère in nom if caractère.isalpha())
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
     with open("index_joueurs.json", 'r', encoding='utf-8') as fichier:
