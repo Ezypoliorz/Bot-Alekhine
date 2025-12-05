@@ -355,7 +355,7 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
         players_indexes = json.load(fichier)
     nom_complet = None
     for player_index in players_indexes :
-        if nom_complet_debut in ''.join(caractère for caractère in unidecode(player_index) if caractère.isalpha()) :
+        if nom_complet_debut in ''.join(caractère for caractère in unidecode(player_index.upper()) if caractère.isalpha()) :
             nom_complet = player_index
             break
     if nom_complet == None :
