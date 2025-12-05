@@ -125,7 +125,7 @@ async def daily_data_update():
             nick = member.nick
             if nick:
                 for player in players:
-                    if ''.join(caractère for caractère in player["NomComplet"].upper() if caractère.isalpha()) == ''.join(caractère for caractère in nick.upper() if caractère.isalpha()):
+                    if ''.join(caractère for caractère in unidecode(player["NomComplet"].upper()) if caractère.isalpha()) == ''.join(caractère for caractère in unidecode(nick.upper()) if caractère.isalpha()):
                         player["NomDiscord"] = member.name
                         break
 
