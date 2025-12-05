@@ -125,7 +125,7 @@ async def daily_data_update():
             nick = member.nick
             if nick:
                 for player in players:
-                    if player["NomComplet"].lower() == nick.lower():
+                    if ''.join(caractère for caractère in player["NomComplet"].upper() if caractère.isalpha()) == ''.join(caractère for caractère in nick.upper() if caractère.isalpha()):
                         player["NomDiscord"] = member.name
                         break
 
@@ -346,16 +346,16 @@ async def top_10_command(interaction: discord.Interaction) :
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur")
 async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str):
-    nom = unidecode(nom.upper().replace("--", ""))
-    prénom = unidecode(prénom.capitalize())
-    nom_complet_debut = f"{nom} {prénom}"
+    nom = unidecode(nom.upper())
+    prénom = unidecode(prénom.upper())
+    nom_complet_debut = ''.join(caractère for caractère in nom if caractère.isalpha()) + ''.join(caractère for caractère in nom if caractère.isalpha())
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
     with open("index_joueurs.json", 'r', encoding='utf-8') as fichier:
         players_indexes = json.load(fichier)
     nom_complet = None
     for player_index in players_indexes :
-        if nom_complet_debut in unidecode(player_index) :
+        if nom_complet_debut in ''.join(caractère for caractère in unidecode(player_index) if caractère.isalpha()) :
             nom_complet = player_index
             break
     if nom_complet == None :
