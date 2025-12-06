@@ -290,13 +290,6 @@ async def on_member_join(member: discord.Member) :
     )
     await thread.add_user(member)
 
-    admin_roles_names = ROLES_ADMINS
-    for role_name in admin_roles_names:
-                admin_role = discord.utils.get(member.guild.roles, name=role_name)
-                if admin_role:
-                    for admin_member in admin_role.members:
-                        await thread.add_user(admin_member)
-
     embed = discord.Embed(
         title=f"🎉 Bienvenue, {member.display_name} !",
         description="Sur le serveur Discord du club d'échecs Caen Alekhine",
