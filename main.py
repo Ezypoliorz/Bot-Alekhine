@@ -15,12 +15,12 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
 LOGS_CHANNEL_ID = int(os.environ.get('LOGS_CHANNEL_ID'))
-ROLES_ADMINS = int(os.environ.get('ROLES_ADMINS'))
+ROLES_ADMINS = list(os.environ.get('ROLES_ADMINS'))
 COMMANDS_CHANNEL_ID = int(os.environ.get('COMMANDS_CHANNEL_ID'))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get('ANNOUNCEMENTS_CHANNEL_ID'))
 TOURNAMENTS_CHANNEL_ID = int(os.environ.get('TOURNAMENTS_CHANNEL_ID'))
 QUATTRO_CHANNEL_ID = int(os.environ.get('QUATTRO_CHANNEL_ID'))
-TDS_CHANNEL_ID = list(os.environ.get('TDS_CHANNEL_ID'))
+TDS_CHANNEL_ID = int(os.environ.get('TDS_CHANNEL_ID'))
 
 intents = discord.Intents.default()
 intents.message_content = True
