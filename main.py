@@ -286,7 +286,7 @@ async def on_member_join(member: discord.Member) :
     thread = await channel.create_thread(
         name=thread_name,
         type=discord.ChannelType.private_thread,
-        auto_archive_duration=5760
+        auto_archive_duration=10080
     )
     await thread.add_user(member)
 
