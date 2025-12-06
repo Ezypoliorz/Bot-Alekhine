@@ -15,7 +15,8 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
 LOGS_CHANNEL_ID = int(os.environ.get('LOGS_CHANNEL_ID'))
-ROLES_ADMINS = ["Dev-bot", "Bureau et Responsables"]
+ROLES_ADMINS = os.environ.get('ROLES_ADMINS').split(',')
+WELCOME_CHANNEL_ID = int(os.environ.get('WELCOME_CHANNEL_ID'))
 COMMANDS_CHANNEL_ID = int(os.environ.get('COMMANDS_CHANNEL_ID'))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get('ANNOUNCEMENTS_CHANNEL_ID'))
 TOURNAMENTS_CHANNEL_ID = int(os.environ.get('TOURNAMENTS_CHANNEL_ID'))
@@ -277,6 +278,43 @@ def run_server():
     
     app.run(host='0.0.0.0', port=port)
 
+@bot.event
+async def on_member_join(member: discord.Member) :
+    channel = bot.get_channel(WELCOME_CHANNEL_ID)
+
+    thread_name = f"Bienvenue, {member.display_name} !"
+    thread = await channel.create_thread(
+        name=thread_name,
+        type=discord.ChannelType.private_thread,
+        auto_archive_duration=5760
+    )
+    await thread.add_user(member)
+
+    admin_roles_names = ROLES_ADMINS
+    for role_name in admin_roles_names:
+                admin_role = discord.utils.get(member.guild.roles, name=role_name)
+                if admin_role:
+                    for admin_member in admin_role.members:
+                        await thread.add_user(admin_member)
+
+    embed = discord.Embed(
+        title=f"🎉 Bienvenue, {member.display_name} !",
+        description="Sur le serveur Discord du club d'échecs Caen Alekhine",
+        color=discord.Color.blue()
+    )
+    embed.add_field(
+        name="Ici, vous pourrez discuter avec les autres membres du club, être averti des prochains tournois,...",
+        value="\u200b",
+        inline=False
+    )
+    embed.add_field(
+        name="Pour commencer",
+        value="Vous pouvez écrire votre nom et prénom ci-dessous, pour que Maël puisse vous donner les permissions nécessaires. Après ça, vous aurez accès au reste du serveur !\nCe processus peut prendre quelques temps, merci de votre patience !\n(Si vous êtes parents d'un enfant membre du club, merci de l'indiquer.)",
+        inline=False
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    await thread.send(embed=embed)
+
 @tree.command(name="ping", description="Répond avec la latence du bot")
 async def ping_command(interaction: discord.Interaction) :
     embed = discord.Embed(
@@ -284,6 +322,7 @@ async def ping_command(interaction: discord.Interaction) :
         description=f"Latence : {round(bot.latency * 1000)}ms",
         color=discord.Color.green()
     )
+    embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="clear", description="Supprime les derniers messages")
@@ -307,6 +346,7 @@ async def clear_command(interaction: discord.Interaction, messages: app_commands
         description=f"{len(deleted)-1 if messages is not None else len(deleted)} messages ont été supprimés.",
         color=discord.Color.green()
     )
+    embed.set_footer(text="Bot Caen Alekhine")
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
@@ -322,7 +362,7 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f'Des commandes',
-        value=f'Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d\'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l\'icône Bot Alekhine, vous verrez toutes les commandes disponibles : `/tournois`, `/quattro`, `/tds`,...\nCes cifférentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...',
+        value=f'Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d\'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l\'icône Bot Alekhine, vous verrez toutes les commandes disponibles : `/tournois`, `/quattro`, `/tds`,...\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...',
         inline=False
     )
     embed.add_field(
@@ -335,21 +375,8 @@ async def infos_command(interaction: discord.Interaction) :
         value=f'© Oscar Mazeure',
         inline=False
     )
-    await interaction.response.send_message(embed=embed)
-
-@tree.command(name="restart", description="Redémarre le bot")
-async def restart_command(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="Restarting bot...",
-        color=discord.Color.orange()
-    )
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.response.send_message(embed=embed, ephemeral=False)
-
-    await asyncio.sleep(0.5)
-    
-    await bot.close()
-    os.execv(sys.executable, ['python'] + sys.argv)
+    await interaction.response.send_message(embed=embed)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 async def top_10_command(interaction: discord.Interaction) :
@@ -433,16 +460,25 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
 async def tournois_command(interaction: discord.Interaction):
     with open("tournois.json", 'r', encoding='utf-8') as fichier:
         tournaments = json.load(fichier)[:10]
-    embed = discord.Embed(
-        title="Prochains tournoi du Calvados",
-        color=discord.Color.yellow()
-    )
-    for index, tournament in enumerate(tournaments) :
-        embed.add_field(
-            name=f'{tournament["NomTournoi"]}',
-            value=f'{tournament["Date"]} • {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
-            inline=False
+
+    if len(tournament) > 0 :
+        embed = discord.Embed(
+            title="Prochains tournoi du Calvados",
+            color=discord.Color.yellow()
         )
+        for index, tournament in enumerate(tournaments) :
+            embed.add_field(
+                name=f'{tournament["NomTournoi"]}',
+                value=f'{tournament["Date"]} • {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
+                inline=False
+            )
+    else :
+        embed = discord.Embed(
+            title="Aucun tournoi annoncé prochainement",
+            description="Plus d'informations sur le site de la FFE : https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef=14",
+            color=discord.Color.yellow()
+        )
+
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -529,6 +565,11 @@ async def tds_command(interaction: discord.Interaction) :
         value = dates,
         inline=False
     )
+    embed.add_field(
+                name=f'Appariements',
+                value=f'À retrouver dans <#{ANNOUNCEMENTS_CHANNEL_ID}> !',
+                inline=False
+            )
 
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
@@ -542,6 +583,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             description=f"Vous n'avez pas les permissions nécessaires. Vous devez posséder l'un des rôles suivants : {''.join(f"{role}, " for role in required_roles)[:-2]}",
             color=discord.Color.red(),
         )
+        embed.set_footer(text="Bot Caen Alekhine")
         if interaction.response.is_done():
             await interaction.followup.send(embed=embed, ephemeral=True)
         else:
