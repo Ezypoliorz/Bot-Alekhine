@@ -15,11 +15,12 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
 LOGS_CHANNEL_ID = int(os.environ.get('LOGS_CHANNEL_ID'))
+ROLES_ADMINS = int(os.environ.get('ROLES_ADMINS'))
 COMMANDS_CHANNEL_ID = int(os.environ.get('COMMANDS_CHANNEL_ID'))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get('ANNOUNCEMENTS_CHANNEL_ID'))
 TOURNAMENTS_CHANNEL_ID = int(os.environ.get('TOURNAMENTS_CHANNEL_ID'))
 QUATTRO_CHANNEL_ID = int(os.environ.get('QUATTRO_CHANNEL_ID'))
-TDS_CHANNEL_ID = int(os.environ.get('TDS_CHANNEL_ID'))
+TDS_CHANNEL_ID = list(os.environ.get('TDS_CHANNEL_ID'))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -285,6 +286,29 @@ async def ping_command(interaction: discord.Interaction) :
     )
     await interaction.response.send_message(embed=embed)
 
+@tree.command(name="clear", description="Supprime les derniers messages")
+@app_commands.describe(messages="Nombre de messages à supprimer (laisser vide pour vider le salon)")
+@app_commands.default_permissions(manage_messages=True)
+@app_commands.checks.has_any_role(*ROLES_ADMINS)
+async def clear_command(interaction: discord.Interaction, nombre: app_commands.Range[int, 1, 1000] = None) :
+    if nombre is None :
+        limit = None
+        message_title = "Nettoyage complet"
+    else :
+        limit = nombre + 1
+        message_title = "Nettoyage partiel"
+    
+    await interaction.response.defer(ephemeral=True)
+
+    deleted = await interaction.channel.purge(limit=limit)
+
+    embed = discord.Embed(
+        title=message_title,
+        description=f"{len(deleted)-1 if nombre is not None else len(deleted)} messages ont été supprimés.",
+        color=discord.Color.green()
+    )
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
 async def infos_command(interaction: discord.Interaction) :
     embed = discord.Embed(
@@ -477,11 +501,11 @@ class DropdownMenuQuattro(View) :
         await interaction.followup.send(embed=embed, ephemeral=False)
 
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
-async def quattro_command(interaction: discord.Interaction):
+async def quattro_command(interaction: discord.Interaction) :
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
 
 @tree.command(name="tds", description="Affiche la prochaine ronde de TDS")
-async def tds_command(interaction: discord.Interaction):
+async def tds_command(interaction: discord.Interaction) :
     with open('tds.json', 'r', encoding='utf-8') as fichier :
         tds = json.load(fichier)
     
@@ -508,6 +532,21 @@ async def tds_command(interaction: discord.Interaction):
 
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
+
+@tree.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
+    if isinstance(error, app_commands.MissingAnyRole):
+        required_roles = [role.name for role in error.missing_roles]
+        embed = discord.Embed(
+            title="Accès refusé",
+            description=f"Vous n'avez pas les permissions nécessaires. Vous devez posséder l'un des rôles suivants : {''.join(f"{role}, " for role in required_roles)[:-2]}",
+            color=discord.Color.red(),
+        )
+        if interaction.response.is_done():
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        else:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
 
 if __name__ == '__main__':
 
