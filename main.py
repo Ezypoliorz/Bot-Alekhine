@@ -290,12 +290,12 @@ async def ping_command(interaction: discord.Interaction) :
 @app_commands.describe(messages="Nombre de messages à supprimer (laisser vide pour vider le salon)")
 @app_commands.default_permissions(manage_messages=True)
 @app_commands.checks.has_any_role(*ROLES_ADMINS)
-async def clear_command(interaction: discord.Interaction, nombre: app_commands.Range[int, 1, 1000] = None) :
-    if nombre is None :
+async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :
+    if messages is None :
         limit = None
         message_title = "Nettoyage complet"
     else :
-        limit = nombre + 1
+        limit = messages + 1
         message_title = "Nettoyage partiel"
     
     await interaction.response.defer(ephemeral=True)
@@ -304,7 +304,7 @@ async def clear_command(interaction: discord.Interaction, nombre: app_commands.R
 
     embed = discord.Embed(
         title=message_title,
-        description=f"{len(deleted)-1 if nombre is not None else len(deleted)} messages ont été supprimés.",
+        description=f"{len(deleted)-1 if messages is not None else len(deleted)} messages ont été supprimés.",
         color=discord.Color.green()
     )
     await interaction.followup.send(embed=embed, ephemeral=True)
