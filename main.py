@@ -9,7 +9,6 @@ import sys
 import threading
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
-import asyncio
 from unidecode import unidecode
 
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
@@ -403,6 +402,7 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
             nom_complet = player_index
             break
     if nom_complet == None :
+
         embed = discord.Embed(
             title="Aucun joueur n'est enregistré à ce nom",
             color=discord.Color.red()
@@ -410,7 +410,8 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
         embed.set_footer(text="Bot Caen Alekhine")
         await interaction.response.send_message(embed=embed, ephemeral=False)
         return None
-    player = players[players_indexes[nom_complet]] 
+    else :
+        player = players[players_indexes[nom_complet]]
     embed = discord.Embed(
         title="Info joueur",
         color=discord.Color.blue()
@@ -572,7 +573,7 @@ async def tds_command(interaction: discord.Interaction) :
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
     if isinstance(error, app_commands.MissingAnyRole):
-        required_roles = [role.name for role in error.missing_roles]
+        required_roles = [role for role in error.missing_roles]
         embed = discord.Embed(
             title="Accès refusé",
             description=f"Vous n'avez pas les permissions nécessaires. Vous devez posséder l'un des rôles suivants : {''.join(f"{role}, " for role in required_roles)[:-2]}",

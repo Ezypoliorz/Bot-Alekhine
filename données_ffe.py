@@ -4,6 +4,7 @@ from operator import itemgetter
 import json
 import datetime
 import re
+from unidecode import unidecode
 
 URL_CLUB = 'https://www.echecs.asso.fr/ListeJoueurs.aspx?Action=JOUEURCLUBREF&ClubRef=184'
 PAYLOAD_CONSTANTES = {
@@ -171,3 +172,23 @@ def fetch_tournaments() :
     tournaments = get_tournaments()
     with open("tournois.json", 'w', encoding='utf-8') as file :
         json.dump(tournaments, file, indent=4, ensure_ascii=False)
+
+def search_player(nom, prénom) :
+    url = "https://www.echecs.asso.fr/ListeJoueurs.aspx?Action=FFE"
+
+    payload = {
+        "Action": "FFE",
+        "JoueurNom": nom
+    }
+
+    response = requests.post(url, data=payload)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    donees_joueurs = fetch_data(soup)
+    
+    for joueur in donees_joueurs :
+        if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom :
+            return joueur
+
+print(search_player("MAZEURE", "OSCAR"))
