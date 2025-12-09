@@ -531,7 +531,7 @@ class DropdownMenuQuattro(View) :
         await interaction.followup.send(embed=embed, ephemeral=False)
 
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
-@app_commands.checks.has_any_role(*(ROLES_ADMINS + ["Quattro"]))
+@app_commands.default_permissions(manage_messages=True)
 async def quattro_command(interaction: discord.Interaction) :
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
 
