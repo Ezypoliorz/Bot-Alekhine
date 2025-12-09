@@ -402,14 +402,15 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
             nom_complet = player_index
             break
     if nom_complet == None :
-
-        embed = discord.Embed(
-            title="Aucun joueur n'est enregistré à ce nom",
-            color=discord.Color.red()
-        )
-        embed.set_footer(text="Bot Caen Alekhine")
-        await interaction.response.send_message(embed=embed, ephemeral=False)
-        return None
+        player = données_ffe.search_player(nom, prénom)
+        if player is None :
+            embed = discord.Embed(
+                title="Aucun joueur n'est enregistré à ce nom",
+                color=discord.Color.red()
+            )
+            embed.set_footer(text="Bot Caen Alekhine")
+            await interaction.response.send_message(embed=embed, ephemeral=False)
+            return None
     else :
         player = players[players_indexes[nom_complet]]
     embed = discord.Embed(
@@ -531,12 +532,12 @@ class DropdownMenuQuattro(View) :
         await interaction.followup.send(embed=embed, ephemeral=False)
 
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
-@app_commands.default_permissions(manage_messages=True)
+@app_commands.default_permissions(administrator=True)
 async def quattro_command(interaction: discord.Interaction) :
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
 
 @tree.command(name="tds", description="Affiche la prochaine ronde de TDS")
-@app_commands.checks.has_any_role(*(ROLES_ADMINS + ["TDS"]))
+@app_commands.default_permissions(administrator=True)
 async def tds_command(interaction: discord.Interaction) :
     with open('tds.json', 'r', encoding='utf-8') as fichier :
         tds = json.load(fichier)
