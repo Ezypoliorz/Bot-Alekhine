@@ -387,6 +387,16 @@ async def top_10_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
+class LinkButtonFideView(discord.ui.View) :
+    def __init__(self, url) :
+        super().__init__(timeout=None)
+        
+        self.add_item(discord.ui.Button(
+            label="Fiche FIDE",
+            style=discord.ButtonStyle.link,
+            url=url
+        ))
+
 @tree.command(name="joueur", description="Affiche les infos d'un joueur")
 async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str):
     nom = unidecode(nom.upper())
@@ -449,7 +459,8 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.response.send_message(embed=embed, ephemeral=False)
+    link_button_fide_view = LinkButtonFideView(url=player["FicheFIDE"])
+    await interaction.response.send_message(embed=embed, view=link_button_fide_view, ephemeral=False)
 
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 async def tournois_command(interaction: discord.Interaction):
@@ -585,6 +596,25 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             await interaction.followup.send(embed=embed, ephemeral=True)
         else:
             await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    else :
+        embed = discord.Embed(
+            title="<@&1442541878968061972> Une erreur est survenue",
+            description=f"Merci de bien vouloir réessayer plus tard, nous travaillons à la résolution du problème.",
+            color=discord.Color.red(),
+        )
+        embed.set_footer(text="Bot Caen Alekhine")
+        if interaction.response.is_done():
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        else:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        embed = discord.Embed(
+            title="Une erreur est survenue ",
+            description=f"Erreur : {error}",
+            color=discord.Color.red(),
+        )
+        channel = bot.get_channel(LOGS_CHANNEL_ID)
+        await channel.send(embed=embed)
         return
 
 if __name__ == '__main__':
