@@ -40,11 +40,11 @@ def fetch_data(soup) :
             joueur_data["Prénom"] = joueur_data["NomComplet"].split(' ')[-1]
             donnees_joueurs.append(joueur_data)
 
-            lien = soup.find('a', class_="lien_texte")
+            lien = soup.find('a', class_="lien_texte").get('href')
             reponse_fiche = requests.get(lien)
             reponse_fiche.raise_for_status() 
             soup_fiche = BeautifulSoup(reponse_fiche.text, 'html.parser')
-            joueur_data["FicheFIDE"] = soup.find('a', class_="lien_texte")
+            joueur_data["FicheFIDE"] = soup.find('a', class_="lien_texte").get('href')
             
     return donnees_joueurs
 
