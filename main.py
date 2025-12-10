@@ -454,6 +454,11 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
         inline=False
     )
     embed.add_field(
+        name=f'Club',
+        value=f'{player["Club"]}',
+        inline=False
+    )
+    embed.add_field(
         name=f'N° FFE',
         value=f'{player["NrFFE"]}',
         inline=False
@@ -599,7 +604,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         return
     else :
         embed = discord.Embed(
-            title="<@&1442541878968061972> Une erreur est survenue",
+            title="Une erreur est survenue",
             description=f"Merci de bien vouloir réessayer plus tard, nous travaillons à la résolution du problème.",
             color=discord.Color.red(),
         )
@@ -609,8 +614,8 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         else:
             await interaction.response.send_message(embed=embed, ephemeral=True)
         embed = discord.Embed(
-            title="Une erreur est survenue ",
-            description=f"Erreur : {error}",
+            title="@Dev-bot Une erreur est survenue ",
+            description=f"Erreur :\n{error}",
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
