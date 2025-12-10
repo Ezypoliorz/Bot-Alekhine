@@ -40,7 +40,7 @@ def fetch_data(soup) :
             joueur_data["Prénom"] = joueur_data["NomComplet"].split(' ')[-1]
             donnees_joueurs.append(joueur_data)
 
-            lien = soup.find('a', class_="lien_texte").get('href')
+            lien = f"https://www.echecs.asso.fr/{soup.find('a', class_='lien_texte').get('href')}"
             reponse_fiche = requests.get(lien)
             reponse_fiche.raise_for_status() 
             soup_fiche = BeautifulSoup(reponse_fiche.text, 'html.parser')
