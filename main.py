@@ -319,8 +319,7 @@ async def ping_command(interaction: discord.Interaction) :
 
 @tree.command(name="clear", description="Supprime les derniers messages")
 @app_commands.describe(messages="Nombre de messages à supprimer (laisser vide pour vider le salon)")
-@app_commands.default_permissions(manage_messages=True)
-@app_commands.checks.has_any_role(*ROLES_ADMINS)
+@app_commands.default_permissions(administrator=True)
 async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :
     if messages is None :
         limit = None
