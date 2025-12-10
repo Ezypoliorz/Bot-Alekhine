@@ -40,11 +40,11 @@ def fetch_data(soup) :
             joueur_data["Prénom"] = joueur_data["NomComplet"].split(' ')[-1]
             donnees_joueurs.append(joueur_data)
 
-            lien = f"https://www.echecs.asso.fr/{soup.find('a', class_='lien_texte').get('href')}"
+            lien = f"https://www.echecs.asso.fr/{ligne.find('a', class_='lien_texte').get('href')}"
             reponse_fiche = requests.get(lien)
-            reponse_fiche.raise_for_status() 
+            reponse_fiche.raise_for_status()
             soup_fiche = BeautifulSoup(reponse_fiche.text, 'html.parser')
-            joueur_data["FicheFIDE"] = soup.find('a', class_="lien_texte").get('href')
+            joueur_data["FicheFIDE"] = soup_fiche.find('a', class_="lien_texte").get('href')
             
     return donnees_joueurs
 
@@ -196,5 +196,3 @@ def search_player(nom, prénom) :
     for joueur in donees_joueurs :
         if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom :
             return joueur
-
-print(search_player("MAZEURE", "OSCAR"))
