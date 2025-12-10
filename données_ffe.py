@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 from operator import itemgetter
 import json
 import datetime
+from datetime import date
 import re
 from unidecode import unidecode
+from dateutil.relativedelta import relativedelta
 
 URL_CLUB = 'https://www.echecs.asso.fr/ListeJoueurs.aspx?Action=JOUEURCLUBREF&ClubRef=184'
 PAYLOAD_CONSTANTES = {
@@ -44,7 +46,46 @@ def fetch_data(soup) :
             reponse_fiche = requests.get(lien)
             reponse_fiche.raise_for_status()
             soup_fiche = BeautifulSoup(reponse_fiche.text, 'html.parser')
-            joueur_data["FicheFIDE"] = soup_fiche.find('a', class_="lien_texte").get('href')
+            lien_fide = soup_fiche.find('a', class_="lien_texte").get('href')
+            joueur_data["FicheFIDE"] = lien_fide
+
+            joueur_data["Actif"] = False
+            reponse_fide = requests.get(lien_fide)
+            reponse_fide.raise_for_status()
+            soup_fiche = BeautifulSoup(reponse_fide.text, 'html.parser')
+            six_months_ago_start = (date.today() - relativedelta(months=3)).replace(day=1)
+            month_map = {
+                'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 
+                'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+            }
+            rating_table = soup.find('table', class_='profile-table_calc')
+            if not rating_table :
+                return donnees_joueurs
+            
+            rows = rating_table.find_all('tr')[1:] 
+            for row in rows:
+                cols = row.find_all('td')
+                if len(cols) < 7:
+                    continue
+                period_str = cols[0].text.strip().replace('\xa0', '')
+                
+                std_gms = int(cols[2].text.strip().replace('\xa0', '') or 0)
+                rpd_gms = int(cols[4].text.strip().replace('\xa0', '') or 0)
+                blz_gms = int(cols[6].text.strip().replace('\xa0', '') or 0)
+                
+                total_games_played = std_gms + rpd_gms + blz_gms
+
+                if total_games_played > 0:
+                    year, month_abbr = period_str.split('-')
+                    month_num = month_map.get(month_abbr[:3])
+                    
+                    if month_num is None:
+                        continue
+
+                    period_date = date(int(year), month_num, 1)
+
+                    if period_date >= six_months_ago_start:
+                        joueur_data["Actif"] = True
             
     return donnees_joueurs
 
