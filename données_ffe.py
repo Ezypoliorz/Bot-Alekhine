@@ -238,5 +238,3 @@ def search_player(nom, prénom) :
     for joueur in donees_joueurs :
         if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom.upper() :
             return joueur
-
-print(search_player("DELAGE", "Xavier"))

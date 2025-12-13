@@ -371,7 +371,7 @@ async def infos_command(interaction: discord.Interaction) :
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (laisser vide pour le top 10)")    
-async def top_10_command(interaction: discord.Interaction, joueurs:int) :
+async def top_10_command(interaction: discord.Interaction, joueurs:int = 10) :
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
     embed = discord.Embed(
