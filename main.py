@@ -14,7 +14,7 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get('DISCORD_TOKEN')
 GUILD_ID = int(os.environ.get('GUILD_ID'))
 LOGS_CHANNEL_ID = int(os.environ.get('LOGS_CHANNEL_ID'))
-ROLES_ADMINS = os.environ.get('ROLES_ADMINS').split(',')
+DEV_BOT_ID = int(os.environ.get('DEV_BOT_ID').split(','))
 WELCOME_CHANNEL_ID = int(os.environ.get('WELCOME_CHANNEL_ID'))
 COMMANDS_CHANNEL_ID = int(os.environ.get('COMMANDS_CHANNEL_ID'))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get('ANNOUNCEMENTS_CHANNEL_ID'))
@@ -372,20 +372,22 @@ async def infos_command(interaction: discord.Interaction) :
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 async def top_10_command(interaction: discord.Interaction) :
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
-        players = json.load(fichier)[:10]
+        players = json.load(fichier)
     embed = discord.Embed(
         title="Classement Top 10 du Club",
         color=discord.Color.blue()
     )
-    for player in players :
-        if player["Actif"] == False :
-            del player
+    number_players = 0
     for index, player in enumerate(players) :
-        embed.add_field(
-            name=f'#{index+1} • {player["NomComplet"]}',
-            value=f'{player["Elo"][:-2]} Elo',
-            inline=False
-        )
+        if player["Actif"] == True :
+            embed.add_field(
+                name=f'#{index+1} • {player["NomComplet"]}',
+                value=f'{player["Elo"][:-2]} Elo',
+                inline=False
+            )
+            number_players += 1
+        if number_players == 10 :
+            break
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
@@ -624,12 +626,12 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         else:
             await interaction.response.send_message(embed=embed, ephemeral=True)
         embed = discord.Embed(
-            title="@Dev-bot Une erreur est survenue ",
+            title="Une erreur est survenue ",
             description=f"Erreur :\n{error}",
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
-        await channel.send(embed=embed)
+        await channel.send(content=f"<@&{DEV_BOT_ID}", embed=embed)
         return
 
 if __name__ == '__main__':
