@@ -226,7 +226,7 @@ def search_player(nom, prénom) :
 
     payload = {
         "Action": "FFE",
-        "JoueurNom": nom
+        "JoueurNom": nom.upper()
     }
 
     response = requests.post(url, data=payload)

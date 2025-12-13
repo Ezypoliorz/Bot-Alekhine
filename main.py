@@ -380,9 +380,9 @@ async def top_10_command(interaction: discord.Interaction, joueurs:int = 10) :
     )
     number_players = 0
     for index, player in enumerate(players) :
-        if player["Actif"] == True :
+        if "Actif" in player and player["Actif"] == True :
             embed.add_field(
-                name=f'#{index+1} • {player["NomComplet"]}',
+                name=f'#{number_players+1} • {player["NomComplet"]}',
                 value=f'{player["Elo"][:-2]} Elo',
                 inline=False
             )
@@ -632,7 +632,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
-        await channel.send(content=f"<@&{DEV_BOT_ID}", embed=embed)
+        await channel.send(content=f"<@&{DEV_BOT_ID}>", embed=embed)
         return
 
 if __name__ == '__main__':
