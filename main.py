@@ -463,8 +463,11 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    link_button_fide_view = LinkButtonFideView(url=player["FicheFIDE"])
-    await interaction.response.send_message(embed=embed, view=link_button_fide_view, ephemeral=False)
+    if player["FicheFIDE"] :
+        link_button_fide_view = LinkButtonFideView(url=player["FicheFIDE"])
+        await interaction.response.send_message(embed=embed, view=link_button_fide_view, ephemeral=False)
+    else :
+        await interaction.response.send_message(embed=embed, ephemeral=False)
 
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 async def tournois_command(interaction: discord.Interaction):
