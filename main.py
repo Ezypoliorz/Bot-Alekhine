@@ -471,7 +471,7 @@ async def tournois_command(interaction: discord.Interaction):
     with open("tournois.json", 'r', encoding='utf-8') as fichier:
         tournaments = json.load(fichier)[:10]
 
-    if len(tournament) > 0 :
+    if len(tournaments) > 0 :
         embed = discord.Embed(
             title="Prochains tournoi du Calvados",
             color=discord.Color.yellow()

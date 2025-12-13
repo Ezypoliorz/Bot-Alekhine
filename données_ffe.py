@@ -52,13 +52,13 @@ def fetch_data(soup) :
             joueur_data["Actif"] = False
             reponse_fide = requests.get(lien_fide)
             reponse_fide.raise_for_status()
-            soup_fiche = BeautifulSoup(reponse_fide.text, 'html.parser')
+            soup_fide = BeautifulSoup(reponse_fide.text, 'html.parser')
             six_months_ago_start = (date.today() - relativedelta(months=3)).replace(day=1)
             month_map = {
                 'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 
                 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
             }
-            rating_table = soup.find('table', class_='profile-table_calc')
+            rating_table = soup_fide.find('table', class_='profile-table_calc')
             if not rating_table :
                 return donnees_joueurs
             
@@ -235,5 +235,7 @@ def search_player(nom, prénom) :
     donees_joueurs = fetch_data(soup)
     
     for joueur in donees_joueurs :
-        if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom :
+        if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom.upper() :
             return joueur
+
+print(search_player("MAZEURE", "Oscar"))
