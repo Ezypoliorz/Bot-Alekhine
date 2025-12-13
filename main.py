@@ -370,7 +370,8 @@ async def infos_command(interaction: discord.Interaction) :
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
-async def top_10_command(interaction: discord.Interaction) :
+@app_commands.describe(joueurs="Nombre de joueurs à afficher (laisser vide pour le top 10)")    
+async def top_10_command(interaction: discord.Interaction, joueurs:int) :
     with open("joueurs.json", 'r', encoding='utf-8') as fichier:
         players = json.load(fichier)
     embed = discord.Embed(
@@ -386,7 +387,7 @@ async def top_10_command(interaction: discord.Interaction) :
                 inline=False
             )
             number_players += 1
-        if number_players == 10 :
+        if number_players == joueurs :
             break
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed, ephemeral=False)
