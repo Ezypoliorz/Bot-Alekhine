@@ -377,6 +377,9 @@ async def top_10_command(interaction: discord.Interaction) :
         title="Classement Top 10 du Club",
         color=discord.Color.blue()
     )
+    for player in players :
+        if player["Actif"] == False :
+            del player
     for index, player in enumerate(players) :
         embed.add_field(
             name=f'#{index+1} • {player["NomComplet"]}',
@@ -474,22 +477,27 @@ async def tournois_command(interaction: discord.Interaction):
     with open("tournois.json", 'r', encoding='utf-8') as fichier:
         tournaments = json.load(fichier)[:10]
 
-    if len(tournaments) > 0 :
+    if len(tournaments) == 1 :
         embed = discord.Embed(
-            title="Prochains tournoi du Calvados",
+            title="Prochain tournoi dans le Calvados",
             color=discord.Color.yellow()
         )
-        for index, tournament in enumerate(tournaments) :
-            embed.add_field(
-                name=f'{tournament["NomTournoi"]}',
-                value=f'{tournament["Date"]} • {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
-                inline=False
-            )
+    elif len(tournaments) > 1 :
+        embed = discord.Embed(
+            title="Prochains tournois dans le Calvados",
+            color=discord.Color.yellow()
+        )
     else :
         embed = discord.Embed(
-            title="Aucun tournoi annoncé prochainement",
-            description="Plus d'informations sur le site de la FFE : https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef=14",
-            color=discord.Color.yellow()
+                title="Aucun tournoi annoncé prochainement",
+                description="Plus d'informations sur le site de la FFE : https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef=14",
+                color=discord.Color.yellow()
+            )
+    for index, tournament in enumerate(tournaments) :
+        embed.add_field(
+            name=f'{tournament["NomTournoi"]}',
+            value=f'{tournament["Date"]} • {tournament["Ville"]}\nPlus d\'infos : {tournament["LienFiche"]}',
+            inline=False
         )
 
     embed.set_footer(text="Bot Caen Alekhine")
