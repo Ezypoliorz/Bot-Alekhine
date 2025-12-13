@@ -51,7 +51,7 @@ def fetch_data(soup) :
 
             if lien_fide :
                 joueur_data["Actif"] = False
-                reponse_fide = requests.get(lien_fide)
+                reponse_fide = requests.get(f"{lien_fide}/calculations")
                 reponse_fide.raise_for_status()
                 soup_fide = BeautifulSoup(reponse_fide.text, 'html.parser')
                 six_months_ago_start = (date.today() - relativedelta(months=3)).replace(day=1)
@@ -239,4 +239,4 @@ def search_player(nom, prénom) :
         if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom.upper() :
             return joueur
 
-print(search_player("MAZEURE", "Oscar"))
+print(search_player("DELAGE", "Xavier"))
