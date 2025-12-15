@@ -249,7 +249,6 @@ async def daily_data_update() :
 async def on_ready() :
     try :
         synced = await tree.sync()
-        print(f"Synchronisé")
     except Exception as e :
         print(e)
     
@@ -311,6 +310,7 @@ async def on_member_join(member: discord.Member) :
     await thread.send(embed=embed)
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
+@app_commands.default_permissions(administrator=True)
 async def ping_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Pong !",
@@ -321,7 +321,7 @@ async def ping_command(interaction: discord.Interaction) :
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="clear", description="Supprime les derniers messages")
-@app_commands.describe(messages="Nombre de messages à supprimer (laisser vide pour vider le salon)")
+@app_commands.describe(messages="Nombre de messages à supprimer (Laisser vide pour vider le salon)")
 @app_commands.default_permissions(administrator=True)
 async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :
     if messages is None :
@@ -351,12 +351,12 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"Un bot Discord développé pour le club",
-        value=f"Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine.",
+        value=f"Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine, par des membres du club",
         inline=False
     )
     embed.add_field(
         name=f"Des commandes",
-        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles : `/tournois`, `/quattro`, `/tds`,...\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
+        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
         inline=False
     )
     embed.add_field(
@@ -373,7 +373,7 @@ async def infos_command(interaction: discord.Interaction) :
     await interaction.response.send_message(embed=embed)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
-@app_commands.describe(joueurs="Nombre de joueurs à afficher (laisser vide pour le top 10)")    
+@app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
@@ -406,6 +406,8 @@ class LinkButtonFideView(discord.ui.View) :
         ))
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur")
+@app_commands.describe(nom="Nom de famille du joueur recherché")
+@app_commands.describe(prénom="Prénom du joueur recherché")
 async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str) :
     nom = unidecode(nom.upper())
     prénom = unidecode(prénom.upper())
@@ -479,9 +481,15 @@ async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str)
         await interaction.response.send_message(embed=embed, ephemeral=False)
 
 @tree.command(name="tournois", description="Affiche les prochains tournois")
-async def tournois_command(interaction: discord.Interaction) :
-    with open("tournois.json", "r", encoding="utf-8") as fichier :
-        tournaments = json.load(fichier)[:10]
+@app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
+async def tournois_command(interaction: discord.Interaction, département : app_commands.Range[int, 1, 95] = 14) :
+    # Ajouter les noms départements en fonction du numéro
+    # Ajouter le bouton lien FFE
+    if département == 14 :
+        with open("tournois.json", "r", encoding="utf-8") as fichier :
+            tournaments = json.load(fichier)[:25]
+    else :
+        tournaments = données_ffe.get_tournaments(département)
 
     if len(tournaments) == 1 :
         embed = discord.Embed(
@@ -496,7 +504,7 @@ async def tournois_command(interaction: discord.Interaction) :
     else :
         embed = discord.Embed(
                 title="Aucun tournoi annoncé prochainement",
-                description="Plus d'informations sur le site de la FFE : https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef=14",
+                description=f"Plus d'informations sur le site de la FFE : https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef={département}",
                 color=discord.Color.yellow()
             )
     for index, tournament in enumerate(tournaments) :
