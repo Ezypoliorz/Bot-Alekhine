@@ -17,7 +17,7 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 LOGS_CHANNEL_ID = int(os.environ.get("LOGS_CHANNEL_ID"))
-DEV_BOT_ROLE_ID = int(os.environ.get("DEVDEV_BOT_ROLE_ID_BOT_ID"))
+DEV_BOT_ROLE_ID = int(os.environ.get("DEV_BOT_ROLE_ID"))
 QUATTRO_ROLE_ID = int(os.environ.get("QUATTRO_ROLE_ID"))
 TDS_ROLE_ID = int(os.environ.get("TDS_ROLE_ID"))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get("ANNOUNCEMENTS_CHANNEL_ID"))
