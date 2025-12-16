@@ -17,13 +17,11 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 LOGS_CHANNEL_ID = int(os.environ.get("LOGS_CHANNEL_ID"))
-DEV_BOT_ID = int(os.environ.get("DEV_BOT_ID"))
-WELCOME_CHANNEL_ID = int(os.environ.get("WELCOME_CHANNEL_ID"))
-COMMANDS_CHANNEL_ID = int(os.environ.get("COMMANDS_CHANNEL_ID"))
+DEV_BOT_ROLE_ID = int(os.environ.get("DEV_BOT_ID"))
+QUATTRO_ROLE_ID = int(os.environ.get("DEV_BOT_ID"))
+TDS_ROLE_ID = int(os.environ.get("DEV_BOT_ID"))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get("ANNOUNCEMENTS_CHANNEL_ID"))
-TOURNAMENTS_CHANNEL_ID = int(os.environ.get("TOURNAMENTS_CHANNEL_ID"))
-QUATTRO_CHANNEL_ID = int(os.environ.get("QUATTRO_CHANNEL_ID"))
-TDS_CHANNEL_ID = int(os.environ.get("TDS_CHANNEL_ID"))
+TDS_QUATTRO_CHANNEL_ID = int(os.environ.get("TOURNAMENTS_CHANNEL_ID"))
 
 with open("départements.json", 'r', encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
@@ -116,7 +114,7 @@ class QuattroReminderView(View) :
         if not match_found :
             embed = discord.Embed(
                     title=f"Aucun match trouvé pour vous à cette ronde.",
-                    description="Merci de vérifier les appariements dans <#{ANNOUNCEMENTS_CHANNEL_ID}>. Sinon, expliquez votre problème en mentionnant \"@Dev-bot\"",
+                    description=f"Merci de vérifier les appariements dans <#{TDS_QUATTRO_CHANNEL_ID}>. Sinon, expliquez votre problème en mentionnant \"@Dev-bot\"",
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
@@ -148,12 +146,13 @@ async def daily_data_update() :
     with open("tournois.json", "r", encoding="utf-8") as fichier :
         tournaments = json.load(fichier)
     
-    channel = bot.get_channel(TOURNAMENTS_CHANNEL_ID)
+    channel_announcements = bot.get_channel(ANNOUNCEMENTS_CHANNEL_ID)
+    channel_tds_quattro = bot.get_channel(TDS_QUATTRO_CHANNEL_ID)
     today = date.today()
     soon_tournaments = []
     posted_tournament_names = set()
 
-    async for message in channel.history(limit=10) :
+    async for message in channel_announcements.history(limit=10) :
         if message.author == bot.user :
             for embed in message.embeds :
                 for field in embed.fields :
@@ -186,14 +185,14 @@ async def daily_data_update() :
                 inline=False
             )
         embed.set_footer(text="Bot Caen Alekhine")
-        await channel.send(embed=embed)
+        await channel_announcements.send(embed=embed)
 
     with open("quattro.json", "r", encoding="utf-8") as fichier :
         quattro = json.load(fichier)
     
     posted_titles = set()
 
-    async for message in channel.history(limit=10) :
+    async for message in channel_tds_quattro.history(limit=10) :
         if message.author == bot.user :
             for embed in message.embeds :
                 posted_titles.add(embed.title)
@@ -214,7 +213,7 @@ async def daily_data_update() :
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
-            await channel.send(embed=embed, view=quattro_reminder_view)
+            await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{DEV_BOT_ROLE_ID}>")
             break
     
     with open("tds.json", "r", encoding="utf-8") as fichier :
@@ -222,7 +221,7 @@ async def daily_data_update() :
     
     posted_titles = set()
 
-    async for message in channel.history(limit=10) :
+    async for message in channel_tds_quattro.history(limit=10) :
         if message.author == bot.user :
             for embed in message.embeds :
                 posted_titles.add(embed.title)
@@ -244,15 +243,14 @@ async def daily_data_update() :
             )
             embed.add_field(
                 name=f"Appariements",
-                value=f"À retrouver dans <#{ANNOUNCEMENTS_CHANNEL_ID}> !",
+                value=f"À retrouver dans <#{TDS_QUATTRO_CHANNEL_ID}> !",
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
-            await channel.send(embed=embed)
+            await channel_tds_quattro.send(embed=embed)
             break
 
 FIRST_START = True
-
 @bot.event
 async def on_ready() :
     global FIRST_START
@@ -277,7 +275,7 @@ async def on_ready() :
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    channel = bot.get_channel(COMMANDS_CHANNEL_ID)
+    channel = bot.get_channel(LOGS_CHANNEL_ID)
     await channel.send(embed=embed)
 
     FIRST_START = False
@@ -293,7 +291,7 @@ def run_server() :
     
     app.run(host="0.0.0.0", port=port)
 
-@bot.event
+"""@bot.event
 async def on_member_join(member: discord.Member) :
     channel = bot.get_channel(WELCOME_CHANNEL_ID)
 
@@ -321,7 +319,7 @@ async def on_member_join(member: discord.Member) :
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    await thread.send(embed=embed)
+    await thread.send(embed=embed)"""
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
 @app_commands.default_permissions(administrator=True)
@@ -517,12 +515,12 @@ async def tournois_command(interaction: discord.Interaction, département : str 
 
     if len(tournaments) == 1 :
         embed = discord.Embed(
-            title=f"Prochain tournoi dans {phrase_département}",
+            title=f"Prochain tournoi {phrase_département}",
             color=discord.Color.yellow()
         )
     elif len(tournaments) > 1 :
         embed = discord.Embed(
-            title=f"Prochains tournois dans {phrase_département}",
+            title=f"Prochains tournois {phrase_département}",
             color=discord.Color.yellow()
         )
     else :
@@ -639,7 +637,7 @@ async def tds_command(interaction: discord.Interaction) :
     )
     embed.add_field(
                 name=f"Appariements",
-                value=f"À retrouver dans <#{ANNOUNCEMENTS_CHANNEL_ID}> !",
+                value=f"À retrouver dans <#{TDS_QUATTRO_CHANNEL_ID}> !",
                 inline=False
             )
 
@@ -678,7 +676,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
-        await channel.send(content=f"<@&{DEV_BOT_ID}>", embed=embed)
+        await channel.send(content=f"<@&{DEV_BOT_ROLE_ID}>", embed=embed)
         return
 
 if __name__ == "__main__" :
