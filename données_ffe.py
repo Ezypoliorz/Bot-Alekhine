@@ -138,7 +138,8 @@ def get_players(url) :
                 
     return all_players_data
 
-def get_tournaments():
+def get_tournaments(département):
+    URL_FFE = f"https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef={département}"
     response = requests.get(URL_FFE)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -217,7 +218,7 @@ def fetch_players() :
         json.dump(players_indexes, file, indent=4, ensure_ascii=False)
 
 def fetch_tournaments() :
-    tournaments = get_tournaments()
+    tournaments = get_tournaments(14)
     with open("tournois.json", 'w', encoding='utf-8') as file :
         json.dump(tournaments, file, indent=4, ensure_ascii=False)
 
