@@ -23,7 +23,102 @@ QUATTRO_CHANNEL_ID = int(os.environ.get("QUATTRO_CHANNEL_ID"))
 TDS_CHANNEL_ID = int(os.environ.get("TDS_CHANNEL_ID"))
 
 DEPARTEMENTS = {
-    "01": "Ain", "02": "Aisne", "03": "Allier", "04": "Alpes-de-Haute-Provence", "05": "Hautes-Alpes", "06": "Alpes-Maritimes", "07": "Ardèche", "08": "Ardennes", "09": "Ariège", "10": "Aube", "11": "Aude", "12": "Aveyron", "13": "Bouches-du-Rhône", "14": "Calvados", "15": "Cantal", "16": "Charente", "17": "Charente-Maritime", "18": "Cher", "19": "Corrèze", "2A": "Corse-du-Sud", "2B": "Haute-Corse", "21": "Côte-d'Or", "22": "Côtes-d'Armor", "23": "Creuse", "24": "Dordogne", "25": "Doubs", "26": "Drôme", "27": "Eure", "28": "Eure-et-Loir", "29": "Finistère", "30": "Gard", "31": "Haute-Garonne", "32": "Gers", "33": "Gironde", "34": "Hérault", "35": "Ille-et-Vilaine", "36": "Indre", "37": "Indre-et-Loire", "38": "Isère", "39": "Jura", "40": "Landes", "41": "Loir-et-Cher", "42": "Loire", "43": "Haute-Loire", "44": "Loire-Atlantique", "45": "Loiret", "46": "Lot", "47": "Lot-et-Garonne", "48": "Lozère", "49": "Maine-et-Loire", "50": "Manche", "51": "Marne", "52": "Haute-Marne", "53": "Mayenne", "54": "Meurthe-et-Moselle", "55": "Meuse", "56": "Morbihan", "57": "Moselle", "58": "Nièvre", "59": "Nord", "60": "Oise", "61": "Orne", "62": "Pas-de-Calais", "63": "Puy-de-Dôme", "64": "Pyrénées-Atlantiques", "65": "Hautes-Pyrénées", "66": "Pyrénées-Orientales", "67": "Bas-Rhin", "68": "Haut-Rhin", "69": "Rhône", "70": "Haute-Saône", "71": "Saône-et-Loire", "72": "Sarthe", "73": "Savoie", "74": "Haute-Savoie", "75": "Paris", "76": "Seine-Maritime", "77": "Seine-et-Marne", "78": "Yvelines", "79": "Deux-Sèvres", "80": "Somme", "81": "Tarn", "82": "Tarn-et-Garonne", "83": "Var", "84": "Vaucluse", "85": "Vendée", "86": "Vienne", "87": "Haute-Vienne", "88": "Vosges", "89": "Yonne", "90": "Territoire de Belfort", "91": "Essonne", "92": "Hauts-de-Seine", "93": "Seine-Saint-Denis", "94": "Val-de-Marne", "95": "Val-d'Oise", "971": "Guadeloupe", "972": "Martinique", "973": "Guyane", "974": "La Réunion", "976": "Mayotte"
+    "01": {"Nom": "Ain", "Phrase": "dans l'Ain"},
+    "02": {"Nom": "Aisne", "Phrase": "dans l'Aisne"},
+    "03": {"Nom": "Allier", "Phrase": "dans l'Allier"},
+    "04": {"Nom": "Alpes-de-Haute-Provence", "Phrase": "dans les Alpes-de-Haute-Provence"},
+    "05": {"Nom": "Hautes-Alpes", "Phrase": "dans les Hautes-Alpes"},
+    "06": {"Nom": "Alpes-Maritimes", "Phrase": "dans les Alpes-Maritimes"},
+    "07": {"Nom": "Ardèche", "Phrase": "dans l'Ardèche"},
+    "08": {"Nom": "Ardennes", "Phrase": "dans les Ardennes"},
+    "09": {"Nom": "Ariège", "Phrase": "dans l'Ariège"},
+    "10": {"Nom": "Aube", "Phrase": "dans l'Aube"},
+    "11": {"Nom": "Aude", "Phrase": "dans l'Aude"},
+    "12": {"Nom": "Aveyron", "Phrase": "dans l'Aveyron"},
+    "13": {"Nom": "Bouches-du-Rhône", "Phrase": "dans les Bouches-du-Rhône"},
+    "14": {"Nom": "Calvados", "Phrase": "au Calvados"},
+    "15": {"Nom": "Cantal", "Phrase": "dans le Cantal"},
+    "16": {"Nom": "Charente", "Phrase": "en Charente"},
+    "17": {"Nom": "Charente-Maritime", "Phrase": "en Charente-Maritime"},
+    "18": {"Nom": "Cher", "Phrase": "dans le Cher"},
+    "19": {"Nom": "Corrèze", "Phrase": "en Corrèze"},
+    "2A": {"Nom": "Corse-du-Sud", "Phrase": "en Corse-du-Sud"},
+    "2B": {"Nom": "Haute-Corse", "Phrase": "en Haute-Corse"},
+    "21": {"Nom": "Côte-d'Or", "Phrase": "en Côte-d'Or"},
+    "22": {"Nom": "Côtes-d'Armor", "Phrase": "dans les Côtes-d'Armor"},
+    "23": {"Nom": "Creuse", "Phrase": "en Creuse"},
+    "24": {"Nom": "Dordogne", "Phrase": "en Dordogne"},
+    "25": {"Nom": "Doubs", "Phrase": "dans le Doubs"},
+    "26": {"Nom": "Drôme", "Phrase": "en Drôme"},
+    "27": {"Nom": "Eure", "Phrase": "dans l'Eure"},
+    "28": {"Nom": "Eure-et-Loir", "Phrase": "en Eure-et-Loir"},
+    "29": {"Nom": "Finistère", "Phrase": "dans le Finistère"},
+    "30": {"Nom": "Gard", "Phrase": "dans le Gard"},
+    "31": {"Nom": "Haute-Garonne", "Phrase": "en Haute-Garonne"},
+    "32": {"Nom": "Gers", "Phrase": "dans le Gers"},
+    "33": {"Nom": "Gironde", "Phrase": "en Gironde"},
+    "34": {"Nom": "Hérault", "Phrase": "dans l'Hérault"},
+    "35": {"Nom": "Ille-et-Vilaine", "Phrase": "en Ille-et-Vilaine"},
+    "36": {"Nom": "Indre", "Phrase": "dans l'Indre"},
+    "37": {"Nom": "Indre-et-Loire", "Phrase": "en Indre-et-Loire"},
+    "38": {"Nom": "Isère", "Phrase": "en Isère"},
+    "39": {"Nom": "Jura", "Phrase": "dans le Jura"},
+    "40": {"Nom": "Landes", "Phrase": "dans les Landes"},
+    "41": {"Nom": "Loir-et-Cher", "Phrase": "dans le Loir-et-Cher"},
+    "42": {"Nom": "Loire", "Phrase": "dans la Loire"},
+    "43": {"Nom": "Haute-Loire", "Phrase": "en Haute-Loire"},
+    "44": {"Nom": "Loire-Atlantique", "Phrase": "en Loire-Atlantique"},
+    "45": {"Nom": "Loiret", "Phrase": "dans le Loiret"},
+    "46": {"Nom": "Lot", "Phrase": "dans le Lot"},
+    "47": {"Nom": "Lot-et-Garonne", "Phrase": "dans le Lot-et-Garonne"},
+    "48": {"Nom": "Lozère", "Phrase": "en Lozère"},
+    "49": {"Nom": "Maine-et-Loire", "Phrase": "en Maine-et-Loire"},
+    "50": {"Nom": "Manche", "Phrase": "dans la Manche"},
+    "51": {"Nom": "Marne", "Phrase": "dans la Marne"},
+    "52": {"Nom": "Haute-Marne", "Phrase": "en Haute-Marne"},
+    "53": {"Nom": "Mayenne", "Phrase": "en Mayenne"},
+    "54": {"Nom": "Meurthe-et-Moselle", "Phrase": "en Meurthe-et-Moselle"},
+    "55": {"Nom": "Meuse", "Phrase": "dans la Meuse"},
+    "56": {"Nom": "Morbihan", "Phrase": "dans le Morbihan"},
+    "57": {"Nom": "Moselle", "Phrase": "en Moselle"},
+    "58": {"Nom": "Nièvre", "Phrase": "en Nièvre"},
+    "59": {"Nom": "Nord", "Phrase": "dans le Nord"},
+    "60": {"Nom": "Oise", "Phrase": "dans l'Oise"},
+    "61": {"Nom": "Orne", "Phrase": "dans l'Orne"},
+    "62": {"Nom": "Pas-de-Calais", "Phrase": "dans le Pas-de-Calais"},
+    "63": {"Nom": "Puy-de-Dôme", "Phrase": "dans le Puy-de-Dôme"},
+    "64": {"Nom": "Pyrénées-Atlantiques", "Phrase": "dans les Pyrénées-Atlantiques"},
+    "65": {"Nom": "Hautes-Pyrénées", "Phrase": "dans les Hautes-Pyrénées"},
+    "66": {"Nom": "Pyrénées-Orientales", "Phrase": "dans les Pyrénées-Orientales"},
+    "67": {"Nom": "Bas-Rhin", "Phrase": "dans le Bas-Rhin"},
+    "68": {"Nom": "Haut-Rhin", "Phrase": "dans le Haut-Rhin"},
+    "69": {"Nom": "Rhône", "Phrase": "dans le Rhône"},
+    "70": {"Nom": "Haute-Saône", "Phrase": "en Haute-Saône"},
+    "71": {"Nom": "Saône-et-Loire", "Phrase": "en Saône-et-Loire"},
+    "72": {"Nom": "Sarthe", "Phrase": "dans la Sarthe"},
+    "73": {"Nom": "Savoie", "Phrase": "en Savoie"},
+    "74": {"Nom": "Haute-Savoie", "Phrase": "en Haute-Savoie"},
+    "75": {"Nom": "Paris", "Phrase": "à Paris"},
+    "76": {"Nom": "Seine-Maritime", "Phrase": "en Seine-Maritime"},
+    "77": {"Nom": "Seine-et-Marne", "Phrase": "en Seine-et-Marne"},
+    "78": {"Nom": "Yvelines", "Phrase": "dans les Yvelines"},
+    "79": {"Nom": "Deux-Sèvres", "Phrase": "dans les Deux-Sèvres"},
+    "80": {"Nom": "Somme", "Phrase": "dans la Somme"},
+    "81": {"Nom": "Tarn", "Phrase": "dans le Tarn"},
+    "82": {"Nom": "Tarn-et-Garonne", "Phrase": "dans le Tarn-et-Garonne"},
+    "83": {"Nom": "Var", "Phrase": "dans le Var"},
+    "84": {"Nom": "Vaucluse", "Phrase": "dans le Vaucluse"},
+    "85": {"Nom": "Vendée", "Phrase": "en Vendée"},
+    "86": {"Nom": "Vienne", "Phrase": "dans la Vienne"},
+    "87": {"Nom": "Haute-Vienne", "Phrase": "en Haute-Vienne"},
+    "88": {"Nom": "Vosges", "Phrase": "dans les Vosges"},
+    "89": {"Nom": "Yonne", "Phrase": "dans l'Yonne"},
+    "90": {"Nom": "Territoire de Belfort", "Phrase": "dans le Territoire de Belfort"},
+    "91": {"Nom": "Essonne", "Phrase": "en Essonne"},
+    "92": {"Nom": "Hauts-de-Seine", "Phrase": "dans les Hauts-de-Seine"},
+    "93": {"Nom": "Seine-Saint-Denis", "Phrase": "en Seine-Saint-Denis"},
+    "94": {"Nom": "Val-de-Marne", "Phrase": "dans le Val-de-Marne"},
+    "95": {"Nom": "Val-d'Oise", "Phrase": "dans le Val-d'Oise"}
 }
 
 intents = discord.Intents.default()
@@ -497,7 +592,8 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 @app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
-    nom_département = DEPARTEMENTS[département]
+    nom_département = DEPARTEMENTS[département]["Nom"]
+    phrase_département = DEPARTEMENTS[département]["Phrase"]
     if département == "14" :
         with open("tournois.json", "r", encoding="utf-8") as fichier :
             tournaments = json.load(fichier)[:25]
@@ -506,18 +602,18 @@ async def tournois_command(interaction: discord.Interaction, département : str 
 
     if len(tournaments) == 1 :
         embed = discord.Embed(
-            title=f"Prochain tournoi dans {nom_département}",
+            title=f"Prochain tournoi dans {phrase_département}",
             color=discord.Color.yellow()
         )
     elif len(tournaments) > 1 :
         embed = discord.Embed(
-            title=f"Prochains tournois dans {département}",
+            title=f"Prochains tournois dans {phrase_département}",
             color=discord.Color.yellow()
         )
     else :
         embed = discord.Embed(
                 title="Aucun tournoi annoncé prochainement",
-                description=f"Plus d'informations sur le site de la FFE.",
+                description=f"Plus d'informations sur le site de la FFE ci-dessous",
                 color=discord.Color.yellow()
             )
     for index, tournament in enumerate(tournaments) :
