@@ -17,15 +17,15 @@ from unidecode import unidecode
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
 LOGS_CHANNEL_ID = int(os.environ.get("LOGS_CHANNEL_ID"))
-DEV_BOT_ROLE_ID = int(os.environ.get("DEV_BOT_ID"))
-QUATTRO_ROLE_ID = int(os.environ.get("DEV_BOT_ID"))
-TDS_ROLE_ID = int(os.environ.get("DEV_BOT_ID"))
+DEV_BOT_ROLE_ID = int(os.environ.get("DEVDEV_BOT_ROLE_ID_BOT_ID"))
+QUATTRO_ROLE_ID = int(os.environ.get("QUATTRO_ROLE_ID"))
+TDS_ROLE_ID = int(os.environ.get("TDS_ROLE_ID"))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get("ANNOUNCEMENTS_CHANNEL_ID"))
-TDS_QUATTRO_CHANNEL_ID = int(os.environ.get("TOURNAMENTS_CHANNEL_ID"))
+TDS_QUATTRO_CHANNEL_ID = int(os.environ.get("TDS_QUATTRO_CHANNEL_ID"))
 
 with open("départements.json", 'r', encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
-
+    
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
