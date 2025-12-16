@@ -529,7 +529,7 @@ async def tournois_command(interaction: discord.Interaction, département : str 
 
     embed.set_footer(text="Bot Caen Alekhine")
     link_button_ffe_tournaments_view = LinkButtonFFETournamentsView(url=f"https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef={département}")
-    await interaction.response.send_message(embed=embed, view=LinkButtonFFETournamentsView, ephemeral=False)
+    await interaction.response.send_message(embed=embed, view=link_button_ffe_tournaments_view, ephemeral=False)
 
 @tournois_command.autocomplete('département')
 async def dept_autocomplete(
