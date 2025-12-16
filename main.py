@@ -1,3 +1,7 @@
+# »»» Bot Alekhine «««
+# Bot Discord du club d'échecs Caen Alekhine
+# 
+
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -5,7 +9,6 @@ from discord.ui import Select, View
 import données_ffe
 import json
 import os
-import sys
 import threading
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
@@ -22,104 +25,8 @@ TOURNAMENTS_CHANNEL_ID = int(os.environ.get("TOURNAMENTS_CHANNEL_ID"))
 QUATTRO_CHANNEL_ID = int(os.environ.get("QUATTRO_CHANNEL_ID"))
 TDS_CHANNEL_ID = int(os.environ.get("TDS_CHANNEL_ID"))
 
-DEPARTEMENTS = {
-    "01": {"Nom": "Ain", "Phrase": "dans l'Ain"},
-    "02": {"Nom": "Aisne", "Phrase": "dans l'Aisne"},
-    "03": {"Nom": "Allier", "Phrase": "dans l'Allier"},
-    "04": {"Nom": "Alpes-de-Haute-Provence", "Phrase": "dans les Alpes-de-Haute-Provence"},
-    "05": {"Nom": "Hautes-Alpes", "Phrase": "dans les Hautes-Alpes"},
-    "06": {"Nom": "Alpes-Maritimes", "Phrase": "dans les Alpes-Maritimes"},
-    "07": {"Nom": "Ardèche", "Phrase": "dans l'Ardèche"},
-    "08": {"Nom": "Ardennes", "Phrase": "dans les Ardennes"},
-    "09": {"Nom": "Ariège", "Phrase": "dans l'Ariège"},
-    "10": {"Nom": "Aube", "Phrase": "dans l'Aube"},
-    "11": {"Nom": "Aude", "Phrase": "dans l'Aude"},
-    "12": {"Nom": "Aveyron", "Phrase": "dans l'Aveyron"},
-    "13": {"Nom": "Bouches-du-Rhône", "Phrase": "dans les Bouches-du-Rhône"},
-    "14": {"Nom": "Calvados", "Phrase": "au Calvados"},
-    "15": {"Nom": "Cantal", "Phrase": "dans le Cantal"},
-    "16": {"Nom": "Charente", "Phrase": "en Charente"},
-    "17": {"Nom": "Charente-Maritime", "Phrase": "en Charente-Maritime"},
-    "18": {"Nom": "Cher", "Phrase": "dans le Cher"},
-    "19": {"Nom": "Corrèze", "Phrase": "en Corrèze"},
-    "2A": {"Nom": "Corse-du-Sud", "Phrase": "en Corse-du-Sud"},
-    "2B": {"Nom": "Haute-Corse", "Phrase": "en Haute-Corse"},
-    "21": {"Nom": "Côte-d'Or", "Phrase": "en Côte-d'Or"},
-    "22": {"Nom": "Côtes-d'Armor", "Phrase": "dans les Côtes-d'Armor"},
-    "23": {"Nom": "Creuse", "Phrase": "en Creuse"},
-    "24": {"Nom": "Dordogne", "Phrase": "en Dordogne"},
-    "25": {"Nom": "Doubs", "Phrase": "dans le Doubs"},
-    "26": {"Nom": "Drôme", "Phrase": "en Drôme"},
-    "27": {"Nom": "Eure", "Phrase": "dans l'Eure"},
-    "28": {"Nom": "Eure-et-Loir", "Phrase": "en Eure-et-Loir"},
-    "29": {"Nom": "Finistère", "Phrase": "dans le Finistère"},
-    "30": {"Nom": "Gard", "Phrase": "dans le Gard"},
-    "31": {"Nom": "Haute-Garonne", "Phrase": "en Haute-Garonne"},
-    "32": {"Nom": "Gers", "Phrase": "dans le Gers"},
-    "33": {"Nom": "Gironde", "Phrase": "en Gironde"},
-    "34": {"Nom": "Hérault", "Phrase": "dans l'Hérault"},
-    "35": {"Nom": "Ille-et-Vilaine", "Phrase": "en Ille-et-Vilaine"},
-    "36": {"Nom": "Indre", "Phrase": "dans l'Indre"},
-    "37": {"Nom": "Indre-et-Loire", "Phrase": "en Indre-et-Loire"},
-    "38": {"Nom": "Isère", "Phrase": "en Isère"},
-    "39": {"Nom": "Jura", "Phrase": "dans le Jura"},
-    "40": {"Nom": "Landes", "Phrase": "dans les Landes"},
-    "41": {"Nom": "Loir-et-Cher", "Phrase": "dans le Loir-et-Cher"},
-    "42": {"Nom": "Loire", "Phrase": "dans la Loire"},
-    "43": {"Nom": "Haute-Loire", "Phrase": "en Haute-Loire"},
-    "44": {"Nom": "Loire-Atlantique", "Phrase": "en Loire-Atlantique"},
-    "45": {"Nom": "Loiret", "Phrase": "dans le Loiret"},
-    "46": {"Nom": "Lot", "Phrase": "dans le Lot"},
-    "47": {"Nom": "Lot-et-Garonne", "Phrase": "dans le Lot-et-Garonne"},
-    "48": {"Nom": "Lozère", "Phrase": "en Lozère"},
-    "49": {"Nom": "Maine-et-Loire", "Phrase": "en Maine-et-Loire"},
-    "50": {"Nom": "Manche", "Phrase": "dans la Manche"},
-    "51": {"Nom": "Marne", "Phrase": "dans la Marne"},
-    "52": {"Nom": "Haute-Marne", "Phrase": "en Haute-Marne"},
-    "53": {"Nom": "Mayenne", "Phrase": "en Mayenne"},
-    "54": {"Nom": "Meurthe-et-Moselle", "Phrase": "en Meurthe-et-Moselle"},
-    "55": {"Nom": "Meuse", "Phrase": "dans la Meuse"},
-    "56": {"Nom": "Morbihan", "Phrase": "dans le Morbihan"},
-    "57": {"Nom": "Moselle", "Phrase": "en Moselle"},
-    "58": {"Nom": "Nièvre", "Phrase": "en Nièvre"},
-    "59": {"Nom": "Nord", "Phrase": "dans le Nord"},
-    "60": {"Nom": "Oise", "Phrase": "dans l'Oise"},
-    "61": {"Nom": "Orne", "Phrase": "dans l'Orne"},
-    "62": {"Nom": "Pas-de-Calais", "Phrase": "dans le Pas-de-Calais"},
-    "63": {"Nom": "Puy-de-Dôme", "Phrase": "dans le Puy-de-Dôme"},
-    "64": {"Nom": "Pyrénées-Atlantiques", "Phrase": "dans les Pyrénées-Atlantiques"},
-    "65": {"Nom": "Hautes-Pyrénées", "Phrase": "dans les Hautes-Pyrénées"},
-    "66": {"Nom": "Pyrénées-Orientales", "Phrase": "dans les Pyrénées-Orientales"},
-    "67": {"Nom": "Bas-Rhin", "Phrase": "dans le Bas-Rhin"},
-    "68": {"Nom": "Haut-Rhin", "Phrase": "dans le Haut-Rhin"},
-    "69": {"Nom": "Rhône", "Phrase": "dans le Rhône"},
-    "70": {"Nom": "Haute-Saône", "Phrase": "en Haute-Saône"},
-    "71": {"Nom": "Saône-et-Loire", "Phrase": "en Saône-et-Loire"},
-    "72": {"Nom": "Sarthe", "Phrase": "dans la Sarthe"},
-    "73": {"Nom": "Savoie", "Phrase": "en Savoie"},
-    "74": {"Nom": "Haute-Savoie", "Phrase": "en Haute-Savoie"},
-    "75": {"Nom": "Paris", "Phrase": "à Paris"},
-    "76": {"Nom": "Seine-Maritime", "Phrase": "en Seine-Maritime"},
-    "77": {"Nom": "Seine-et-Marne", "Phrase": "en Seine-et-Marne"},
-    "78": {"Nom": "Yvelines", "Phrase": "dans les Yvelines"},
-    "79": {"Nom": "Deux-Sèvres", "Phrase": "dans les Deux-Sèvres"},
-    "80": {"Nom": "Somme", "Phrase": "dans la Somme"},
-    "81": {"Nom": "Tarn", "Phrase": "dans le Tarn"},
-    "82": {"Nom": "Tarn-et-Garonne", "Phrase": "dans le Tarn-et-Garonne"},
-    "83": {"Nom": "Var", "Phrase": "dans le Var"},
-    "84": {"Nom": "Vaucluse", "Phrase": "dans le Vaucluse"},
-    "85": {"Nom": "Vendée", "Phrase": "en Vendée"},
-    "86": {"Nom": "Vienne", "Phrase": "dans la Vienne"},
-    "87": {"Nom": "Haute-Vienne", "Phrase": "en Haute-Vienne"},
-    "88": {"Nom": "Vosges", "Phrase": "dans les Vosges"},
-    "89": {"Nom": "Yonne", "Phrase": "dans l'Yonne"},
-    "90": {"Nom": "Territoire de Belfort", "Phrase": "dans le Territoire de Belfort"},
-    "91": {"Nom": "Essonne", "Phrase": "en Essonne"},
-    "92": {"Nom": "Hauts-de-Seine", "Phrase": "dans les Hauts-de-Seine"},
-    "93": {"Nom": "Seine-Saint-Denis", "Phrase": "en Seine-Saint-Denis"},
-    "94": {"Nom": "Val-de-Marne", "Phrase": "dans le Val-de-Marne"},
-    "95": {"Nom": "Val-d'Oise", "Phrase": "dans le Val-d'Oise"}
-}
+with open("départements.json", 'r', encoding="utf-8") as fichier :
+    DEPARTEMENTS = json.load(fichier)
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -344,8 +251,14 @@ async def daily_data_update() :
             await channel.send(embed=embed)
             break
 
+FIRST_START = True
+
 @bot.event
 async def on_ready() :
+    global FIRST_START
+    if not FIRST_START:
+        return
+    
     try :
         synced = await tree.sync()
     except Exception as e :
@@ -366,6 +279,8 @@ async def on_ready() :
     embed.set_footer(text="Bot Caen Alekhine")
     channel = bot.get_channel(COMMANDS_CHANNEL_ID)
     await channel.send(embed=embed)
+
+    FIRST_START = False
 
 def run_server() :
     app = Flask("") 
@@ -465,7 +380,7 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"N'hésitez pas à nous faire part de vos suggestions !",
-        value=f"© Oscar Mazeure",
+        value=f"\u2800",
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
