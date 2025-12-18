@@ -417,80 +417,72 @@ class LinkButtonFideView(discord.ui.View) :
             url=url
         ))
 
-@tree.command(name="joueur", description="Affiche les infos d'un joueur")
-@app_commands.describe(nom="Nom de famille du joueur recherché")
-@app_commands.describe(prénom="Prénom du joueur recherché")
-async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str) :
-    nom = unidecode(nom.upper())
-    prénom = unidecode(prénom.upper())
-    nom_complet_debut = "".join(caractère for caractère in nom if caractère.isalpha()) + "".join(caractère for caractère in prénom if caractère.isalpha())
-    with open("joueurs.json", "r", encoding="utf-8") as fichier :
+async def player_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    try:
+        with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
+            players_indexes = json.load(fichier)
+        
+        return [
+            app_commands.Choice(name=player_name, value=player_name)
+            for player_name in players_indexes.keys()
+            if current.lower() in player_name.lower()
+        ][:25]
+    except Exception :
+        return []
+
+@tree.command(name="joueur", description="Affiche les infos d'un joueur du club")
+@app_commands.describe(joueur="Nom et prénom du joueur")
+async def joueur_command(interaction: discord.Interaction, joueur: str):
+    await interaction.response.defer()
+
+    with open("joueurs.json", "r", encoding="utf-8") as fichier:
         players = json.load(fichier)
-    with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
+    with open("index_joueurs.json", "r", encoding="utf-8") as fichier:
         players_indexes = json.load(fichier)
-    nom_complet = None
-    for player_index in players_indexes :
-        if nom_complet_debut in "".join(caractère for caractère in unidecode(player_index.upper()) if caractère.isalpha()) :
-            nom_complet = player_index
-            break
-    if nom_complet == None :
-        player = données_ffe.search_player(nom, prénom)
-        if player is None :
+
+    if joueur in players_indexes:
+        player = players[players_indexes[joueur]]
+    else:
+        player = données_ffe.search_player(joueur, "")
+        if player is None:
             embed = discord.Embed(
-                title="Aucun joueur n'est enregistré à ce nom",
+                title="Joueur non trouvé",
+                description=f"Aucun joueur enregistré sous le nom : **{joueur}**",
                 color=discord.Color.red()
             )
             embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.response.send_message(embed=embed, ephemeral=False)
-            return None
-    else :
-        player = players[players_indexes[nom_complet]]
+            await interaction.followup.send(embed=embed)
+            return
+
     embed = discord.Embed(
-        title="Info joueur",
+        title="Fiche Joueur",
         color=discord.Color.blue()
     )
-    embed.add_field(
-        name=f"Nom",
-        value=f"{player["NomComplet"]}",
-        inline=False
-    )
-    if "NomDiscord" in player :
-        embed.add_field(
-            name=f"Nom d'utilisateur Discord",
-            value=f"{player["NomDiscord"]}",
-            inline=False
-        )
-    embed.add_field(
-        name=f"Elo Standard",
-        value=f"{player["Elo"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"Elo Rapide",
-        value=f"{player["Rapide"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"Elo Blitz",
-        value=f"{player["Blitz"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"Club",
-        value=f"{player["Club"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"N° FFE",
-        value=f"{player["NrFFE"]}",
-        inline=False
-    )
+    embed.add_field(name="Nom Complet", value=player["NomComplet"], inline=False)
+    
+    if "NomDiscord" in player:
+        embed.add_field(name="Utilisateur Discord", value=f"@{player['NomDiscord']}", inline=False)
+    
+    embed.add_field(name="Elo Standard", value=player["Elo"], inline=True)
+    embed.add_field(name="Elo Rapide", value=player["Rapide"], inline=True)
+    embed.add_field(name="Elo Blitz", value=player["Blitz"], inline=True)
+    embed.add_field(name="Club", value=player["Club"], inline=False)
+    embed.add_field(name="N° FFE", value=player["NrFFE"], inline=True)
+    
     embed.set_footer(text="Bot Caen Alekhine")
-    if player["FicheFIDE"] :
-        link_button_fide_view = LinkButtonFideView(url=player["FicheFIDE"])
-        await interaction.response.send_message(embed=embed, view=link_button_fide_view, ephemeral=False)
-    else :
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+
+    if player.get("FicheFIDE"):
+        view = LinkButtonFideView(url=player["FicheFIDE"])
+        await interaction.followup.send(embed=embed, view=view)
+    else:
+        await interaction.followup.send(embed=embed)
+
+@joueur_command.autocomplete("joueur")
+async def joueur_auto(interaction: discord.Interaction, current: str) :
+    return await player_autocomplete(interaction, current)
 
 class LinkButtonFFETournamentsView(discord.ui.View) :
     def __init__(self, url) :
