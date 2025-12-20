@@ -9,11 +9,11 @@ import données_ffe
 import json
 import os
 import threading
+import asyncio
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 from unidecode import unidecode
 import pandas as pd
-import asyncio
 
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
@@ -123,8 +123,8 @@ class QuattroReminderView(View) :
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
-    données_ffe.fetch_players()
-    données_ffe.fetch_tournaments()
+    await asyncio.to_thread(données_ffe.fetch_players)
+    await asyncio.to_thread(données_ffe.fetch_tournaments)
     
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
@@ -272,7 +272,8 @@ async def on_ready() :
     
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
 
-    asyncio.run(daily_data_update())
+    if not daily_data_update.is_running():
+        daily_data_update.start()
 
     FIRST_START = False
 
