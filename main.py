@@ -249,6 +249,15 @@ async def daily_data_update() :
             embed.set_footer(text="Bot Caen Alekhine")
             await channel_tds_quattro.send(embed=embed)
             break
+    
+    embed = discord.Embed(
+        title="Bot up and running",
+        description=f"Connected as {bot.user} - ID : {bot.user.id}",
+        color=discord.Color.green()
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    channel = bot.get_channel(LOGS_CHANNEL_ID)
+    await channel.send(embed=embed)
 
 FIRST_START = True
 @bot.event
@@ -266,15 +275,6 @@ async def on_ready() :
 
     if not daily_data_update.is_running():
         daily_data_update.start()
-
-    embed = discord.Embed(
-        title="Bot up and running",
-        description=f"Connected as {bot.user} - ID : {bot.user.id}",
-        color=discord.Color.green()
-    )
-    embed.set_footer(text="Bot Caen Alekhine")
-    channel = bot.get_channel(LOGS_CHANNEL_ID)
-    await channel.send(embed=embed)
 
     FIRST_START = False
 
@@ -462,7 +462,7 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
 
     embed.set_footer(text="Bot Caen Alekhine")
     top_10_view = Top10View(fichier=fichier)
-    await interaction.response.send_message(embed=embed, file=fichier, view=top_10_view, ephemeral=False)
+    await interaction.response.send_message(embed=embed, view=top_10_view, ephemeral=False)
     os.remove(f"Top {joueurs} club.xlsx")
 
 class LinkButtonFideView(discord.ui.View) :
