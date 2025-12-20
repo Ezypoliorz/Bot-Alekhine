@@ -434,7 +434,7 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
         })
 
         worksheet.conditional_format("B2:D2", {"type": "no_errors", "format": bold_bordure})
-        worksheet.conditional_format(f"B3:D{2+players}", {"type": "no_errors", "format": bordure})
+        worksheet.conditional_format(f"B3:D{2+joueurs}", {"type": "no_errors", "format": bordure})
 
         for i, col in enumerate(df.columns):
             max_len = max(
@@ -712,6 +712,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
+        embed.set_footer(text="Bot Caen Alekhine")
         await channel.send(content=f"<@&{DEV_BOT_ROLE_ID}>", embed=embed)
         return
 
