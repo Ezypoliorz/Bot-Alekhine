@@ -1,6 +1,5 @@
 # »»» Bot Alekhine «««
 # Bot Discord du club d'échecs Caen Alekhine
-# 
 
 import discord
 from discord.ext import commands, tasks
@@ -265,9 +264,7 @@ async def on_ready() :
     
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
 
-    if not daily_data_update.is_running() :
-        await daily_data_update()
-    if not daily_data_update.is_running() :
+    if not daily_data_update.is_running():
         daily_data_update.start()
 
     embed = discord.Embed(
@@ -357,6 +354,7 @@ async def clear_command(interaction: discord.Interaction, messages: app_commands
     await interaction.followup.send(embed=embed, ephemeral=True)
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
+@app_commands.default_permissions(administrator=True)
 async def infos_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Informations Bot Alekhine",
@@ -385,8 +383,23 @@ async def infos_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
+class Top10View(View) :
+    def __init__(self, fichier) :
+        super().__init__(timeout=None)
+        self.fichier = fichier
+    
+    @discord.ui.button(
+        label="Exporter en tableau",
+        style=discord.ButtonStyle.primary,
+        custom_id="top_10_button",
+    )
+
+    async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
+        interaction.followup.send(file=fichier)
+
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
+@app_commands.default_permissions(administrator=True)
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
@@ -403,7 +416,7 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
                 value=f"{player["Elo"][:-2]} Elo",
                 inline=False
             )
-            df["Placement"].append(f"{number_players+1}")
+            df["Placement"].append(f"#{number_players+1}")
             df["NomComplet"].append(f"{player["NomComplet"]}")
             df["ELO"].append(f"{player["Elo"]}")
             number_players += 1
@@ -443,12 +456,13 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
             )
             max_len += 2 + 20/100*max_len
 
-            worksheet.set_column(i+2, i+2, max_len)
+            worksheet.set_column(i+1, i+1, max_len)
         
         fichier = discord.File(f"Top {joueurs} club.xlsx")
 
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.response.send_message(embed=embed, file=fichier, ephemeral=False)
+    top_10_view = Top10View(fichier=fichier)
+    await interaction.response.send_message(embed=embed, file=fichier, view=top_10_view, ephemeral=False)
     os.remove(f"Top {joueurs} club.xlsx")
 
 class LinkButtonFideView(discord.ui.View) :
@@ -479,6 +493,7 @@ async def player_autocomplete(
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur du club")
 @app_commands.describe(joueur="Nom et prénom du joueur")
+@app_commands.default_permissions(administrator=True)
 async def joueur_command(interaction: discord.Interaction, joueur: str):
     await interaction.response.defer()
 
@@ -540,6 +555,7 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 @app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
+@app_commands.default_permissions(administrator=True)
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
     nom_département = DEPARTEMENTS[département]["Nom"]
     phrase_département = DEPARTEMENTS[département]["Phrase"]
