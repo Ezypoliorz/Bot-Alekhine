@@ -409,6 +409,7 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
             number_players += 1
         if number_players == joueurs :
             break
+    df = pd.DataFrame(df)
     with pd.ExcelWriter(f"Top {joueurs} club.xlsx", engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Sheet1", startrow=1, startcol=1)
         
