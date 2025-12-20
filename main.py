@@ -13,6 +13,7 @@ from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 from unidecode import unidecode
 import pandas as pd
+import asyncio
 
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
@@ -122,7 +123,6 @@ class QuattroReminderView(View) :
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
-    
     données_ffe.fetch_players()
     données_ffe.fetch_tournaments()
     
@@ -272,8 +272,7 @@ async def on_ready() :
     
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
 
-    if not daily_data_update.is_running():
-        daily_data_update.start()
+    asyncio.run(daily_data_update())
 
     FIRST_START = False
 
@@ -394,7 +393,7 @@ class Top10View(View) :
     )
 
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
-        await interaction.followup.send(file=fichier)
+        await interaction.followup.send(content="Fichier tableur .xlsx", file=fichier)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
