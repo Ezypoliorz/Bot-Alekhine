@@ -122,7 +122,6 @@ class QuattroReminderView(View) :
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
-    print("Mise à jour quotidienne des données...")
     
     données_ffe.fetch_players()
     données_ffe.fetch_tournaments()
@@ -395,7 +394,7 @@ class Top10View(View) :
     )
 
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
-        interaction.followup.send(file=fichier)
+        await interaction.followup.send(file=fichier)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
