@@ -277,7 +277,7 @@ async def on_ready() :
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
 
     if not daily_data_update.is_running():
-        daily_data_update()
+        await daily_data_update()
 
     FIRST_START = False
 
