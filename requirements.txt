@@ -6,3 +6,5 @@ unidecode
 python-dateutil
 pandas
 xlsxwriter
+python-chess
+cairosvg
