@@ -14,6 +14,10 @@ from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 from unidecode import unidecode
 import pandas as pd
+import chess
+import chess.svg
+import io
+from cairosvg import svg2png
 
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 GUILD_ID = int(os.environ.get("GUILD_ID"))
@@ -694,6 +698,63 @@ async def tds_command(interaction: discord.Interaction) :
 
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
+
+class ChessMatchView(discord.ui.View):
+    def __init__(self, moves_fen):
+        super().__init__(timeout=60)
+        self.moves_fen = moves_fen
+        self.current_index = 0
+
+    def get_board_image(self):
+        # Génère l'image PNG du plateau à partir du FEN actuel
+        board = chess.Board(self.moves_fen[self.current_index])
+        svg_data = chess.svg.board(board, size=400)
+        png_data = svg2png(bytestring=svg_data)
+        return discord.File(io.BytesIO(png_data), filename="board.png")
+
+    async def update_message(self, interaction: discord.Interaction):
+        file = self.get_board_image()
+        embed = discord.Embed(title=f"Coup {self.current_index}", color=discord.Color.blue())
+        embed.set_image(url="attachment://board.png")
+        # On édite le message pour éviter les doublons
+        await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+
+    @discord.ui.button(label="⬅️ Précédent", style=discord.ButtonStyle.gray)
+    async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_index > 0:
+            self.current_index -= 1
+            await self.update_message(interaction)
+        else:
+            await interaction.response.send_message("Début de la partie.", ephemeral=True)
+
+    @discord.ui.button(label="Suivant ➡️", style=discord.ButtonStyle.gray)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_index < len(self.moves_fen) - 1:
+            self.current_index += 1
+            await self.update_message(interaction)
+        else:
+            await interaction.response.send_message("Fin de la partie.", ephemeral=True)
+
+@tree.command(name="partie", description="Affiche une partie de test")
+async def partie_command(interaction: discord.Interaction):
+    # Quelques positions FEN préenregistrées (Début de partie italien)
+    fens = [
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+        "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+        "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+        "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3"
+    ]
+    
+    view = ChessMatchView(fens)
+    file = view.get_board_image()
+    
+    embed = discord.Embed(title="Analyse de partie", color=discord.Color.blue())
+    embed.set_image(url="attachment://board.png")
+    embed.set_footer(text="Bot Caen Alekhine")
+    
+    await interaction.response.send_message(embed=embed, file=file, view=view)
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
