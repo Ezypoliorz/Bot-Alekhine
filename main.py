@@ -127,8 +127,8 @@ class QuattroReminderView(View) :
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
-    (données_ffe.fetch_players)
-    (données_ffe.fetch_tournaments)
+    données_ffe.fetch_players()
+    données_ffe.fetch_tournaments()
     
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
