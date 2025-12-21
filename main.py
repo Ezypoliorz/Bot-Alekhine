@@ -127,8 +127,8 @@ class QuattroReminderView(View) :
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
-    await asyncio.to_thread(données_ffe.fetch_players)
-    await asyncio.to_thread(données_ffe.fetch_tournaments)
+    (données_ffe.fetch_players)
+    (données_ffe.fetch_tournaments)
     
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
@@ -277,7 +277,7 @@ async def on_ready() :
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
 
     if not daily_data_update.is_running():
-        daily_data_update.start()
+        daily_data_update()
 
     FIRST_START = False
 
