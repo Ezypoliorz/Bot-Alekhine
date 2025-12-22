@@ -389,7 +389,7 @@ async def infos_command(interaction: discord.Interaction) :
 class Top10View(View) :
     def __init__(self, fichier) :
         super().__init__(timeout=None)
-        self.fichier = fichier
+        self.filename = fichier
     
     @discord.ui.button(
         label="Exporter en tableau",
@@ -398,7 +398,9 @@ class Top10View(View) :
     )
 
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
-        await interaction.followup.send(content="Fichier tableur .xlsx", file=fichier)
+        with open(self.filename, "rb") as f:
+            discord_file = discord.File(f, filename=self.filename)
+        await interaction.followup.send(content="Fichier tableur .xlsx", file=discord_file)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
