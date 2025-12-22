@@ -269,6 +269,8 @@ async def on_ready() :
     if not FIRST_START:
         return
     
+    bot.add_view(LinkModerationView())
+    
     try :
         synced = await tree.sync()
     except Exception as e :
@@ -355,7 +357,7 @@ class ClearValidationView(View) :
             color=discord.Color.green()
         )
         embed.set_footer(text="Bot Caen Alekhine")
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tree.command(name="clear", description="Supprime les derniers messages")
 @app_commands.describe(messages="Nombre de messages à supprimer (Laisser vide pour vider le salon)")
@@ -385,7 +387,7 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"Des commandes",
-        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
+        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d'envoi de messages, et vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
         inline=False
     )
     embed.add_field(
@@ -415,7 +417,12 @@ class Top10View(View) :
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
         with open(self.filename, "rb") as f :
             discord_file = discord.File(f, filename=self.filename)
-        await interaction.response.send_message(content="Fichier tableur `xlsx`", file=discord_file)
+        embed = discord.Embed(
+            title="Fichier tableur `xlsx`",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Bot Caen Alekhine")
+        await interaction.response.send_message(embed=embed, file=discord_file, ephemeral=True)
         os.remove(self.filename)
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
@@ -520,9 +527,9 @@ async def joueur_command(interaction: discord.Interaction, joueur: str):
     with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
         players_indexes = json.load(fichier)
 
-    if f"{"".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}" in players_indexes :
+    if f"{" ".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}" in players_indexes :
         player = players[players_indexes[f"{"".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}"]]
-    elif f"{"".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}" in players_indexes :
+    elif f"{" ".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}" in players_indexes :
         player = players[players_indexes[f"{"".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}"]]
     else :
         player = données_ffe.search_player("".join(joueur.split(" ")[:-1]).upper(), joueur.split(" ")[-1])
@@ -718,62 +725,65 @@ async def tds_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
-class ChessMatchView(discord.ui.View):
-    def __init__(self, moves_fen):
-        super().__init__(timeout=60)
-        self.moves_fen = moves_fen
-        self.current_index = 0
+class LinkModerationView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
 
-    def get_board_image(self):
-        # Génère l'image PNG du plateau à partir du FEN actuel
-        board = chess.Board(self.moves_fen[self.current_index])
-        svg_data = chess.svg.board(board, size=400)
-        png_data = svg2png(bytestring=svg_data)
-        return discord.File(io.BytesIO(png_data), filename="board.png")
+    @discord.ui.button(label="Accepter le lien", style=discord.ButtonStyle.success, custom_id="link_accept")
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # On récupère le lien et l'auteur du texte du message
+        content = interaction.message.content
+        public_channel = interaction.guild.get_channel(ANNOUNCEMENTS_CHANNEL_ID)
+        
+        await public_channel.send(f"🔗 **Lien partagé** :\n{content.split(':', 1)[1].strip()}")
+        await interaction.response.edit_message(content=f"✅ Lien validé par {interaction.user.mention}", view=None)
 
-    async def update_message(self, interaction: discord.Interaction):
-        file = self.get_board_image()
-        embed = discord.Embed(title=f"Coup {self.current_index}", color=discord.Color.blue())
-        embed.set_image(url="attachment://board.png")
-        # On édite le message pour éviter les doublons
-        await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
+    @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, custom_id="link_reject")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(content=f"❌ Lien refusé par {interaction.user.mention}", view=None)
 
-    @discord.ui.button(label="⬅️ Précédent", style=discord.ButtonStyle.gray)
-    async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.current_index > 0:
-            self.current_index -= 1
-            await self.update_message(interaction)
-        else:
-            await interaction.response.send_message("Début de la partie.", ephemeral=True)
+class LinkSubmitModal(discord.ui.Modal, title='Vérification de lien'):
+    link_input = discord.ui.TextInput(label='Collez votre lien ici', style=discord.TextStyle.short, required=True)
+    reason_input = discord.ui.TextInput(label='Description du lien', style=discord.TextStyle.paragraph, required=False)
 
-    @discord.ui.button(label="Suivant ➡️", style=discord.ButtonStyle.gray)
-    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.current_index < len(self.moves_fen) - 1:
-            self.current_index += 1
-            await self.update_message(interaction)
-        else:
-            await interaction.response.send_message("Fin de la partie.", ephemeral=True)
+    async def on_submit(self, interaction: discord.Interaction):
+        mod_channel = interaction.guild.get_channel(LOGS_CHANNEL_ID)
+        full_content = f"Lien de {interaction.user.mention} : {self.link_input.value}\nDescription : {self.reason_input.value}"
+        
+        await mod_channel.send(content=full_content, view=LinkModerationView())
+        await interaction.response.send_message("Votre lien a été soumis aux modérateurs.", ephemeral=True)
 
-@tree.command(name="partie", description="Affiche une partie de test")
-async def partie_command(interaction: discord.Interaction):
-    # Quelques positions FEN préenregistrées (Début de partie italien)
-    fens = [
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
-        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
-        "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
-        "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
-        "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3"
-    ]
-    
-    view = ChessMatchView(fens)
-    file = view.get_board_image()
-    
-    embed = discord.Embed(title="Analyse de partie", color=discord.Color.blue())
-    embed.set_image(url="attachment://board.png")
-    embed.set_footer(text="Bot Caen Alekhine")
-    
-    await interaction.response.send_message(embed=embed, file=file, view=view)
+@bot.event
+async def on_message(message):
+    # On ne vérifie pas les messages du bot lui-même
+    if message.author == bot.user:
+        return
+
+    # On cible le salon où les liens doivent être modérés
+    if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID:
+        if "http://" in message.content.lower() or "https://" in message.content.lower():
+            # 1. On supprime le message original
+            await message.delete()
+            
+            # 2. On prévient l'utilisateur et on propose le formulaire
+            view = View()
+            btn = discord.ui.Button(label="Soumettre mon lien", style=discord.ButtonStyle.primary)
+            
+            async def btn_callback(interaction):
+                await interaction.response.send_modal(LinkSubmitModal())
+            
+            btn.callback = btn_callback
+            view.add_item(btn)
+            
+            await message.channel.send(
+                f"{message.author.mention}, les liens directs sont interdits ici. Merci de passer par le formulaire de modération.",
+                view=view,
+                delete_after=15 # Le message d'avertissement s'efface après 15s
+            )
+            return
+
+    # Important pour que les autres commandes continuent de fonctionner
+    await bot.process_commands(message)
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
