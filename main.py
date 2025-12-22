@@ -400,7 +400,7 @@ class Top10View(View) :
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
         with open(self.filename, "rb") as f:
             discord_file = discord.File(f, filename=self.filename)
-        await interaction.followup.send(content="Fichier tableur .xlsx", file=discord_file)
+        await interaction.response.send_message(content="Fichier tableur .xlsx", file=discord_file)
         os.remove(self.filename)
 
 
