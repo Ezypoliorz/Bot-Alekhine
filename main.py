@@ -601,7 +601,7 @@ async def dept_autocomplete(
     current: str,
 ) -> list[app_commands.Choice[str]]:
     return [
-        app_commands.Choice(name=f"{code} - {nom}", value=code)
+        app_commands.Choice(name=f"{code} - {nom["Nom"]}", value=code)
         for code, nom in DEPARTEMENTS.items()
         if current.lower() in code.lower() or current.lower() in nom.lower()
     ][:25]
