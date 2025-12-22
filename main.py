@@ -333,28 +333,43 @@ async def ping_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
+class ClearValidationView(View) :
+    def __init__(self, messages) :
+        super().__init__(timeout=None)
+        self.messages = messages
+        self.limit = messages if messages is None else messages + 1
+        self.message_title = "Nettoyage complet" if messages is None else "Nettoyage partiel"
+    
+    @discord.ui.button(
+        label="Supprimer",
+        style=discord.ButtonStyle.danger,
+        custom_id="supprimer_clear_button",
+    )
+
+    async def supprimer_clear_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
+        deleted = await interaction.channel.purge(limit=self.limit)
+
+        embed = discord.Embed(
+            title=self.message_title,
+            description=f"{len(deleted)-1 if self.messages is not None else len(deleted)} messages ont été supprimés.",
+            color=discord.Color.green()
+        )
+        embed.set_footer(text="Bot Caen Alekhine")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
 @tree.command(name="clear", description="Supprime les derniers messages")
 @app_commands.describe(messages="Nombre de messages à supprimer (Laisser vide pour vider le salon)")
 @app_commands.default_permissions(administrator=True)
-async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :
-    if messages is None :
-        limit = None
-        message_title = "Nettoyage complet"
-    else :
-        limit = messages + 1
-        message_title = "Nettoyage partiel"
-    
+async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :    
     await interaction.response.defer(ephemeral=True)
 
-    deleted = await interaction.channel.purge(limit=limit)
-
     embed = discord.Embed(
-        title=message_title,
-        description=f"{len(deleted)-1 if messages is not None else len(deleted)} messages ont été supprimés.",
-        color=discord.Color.green()
-    )
+            title=f"Confirmer le nettoyage complet du salon ?" if messages is None else f"Confirmer la suppression de {messages} messages ?",
+            color=discord.Color.red()
+        )
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.followup.send(embed=embed, ephemeral=True)
+    clear_validation_view = ClearValidationView(messages=messages)
+    await interaction.followup.send(embed=embed, view=clear_validation_view,ephemeral=True)
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
 @app_commands.default_permissions(administrator=True)
@@ -398,11 +413,10 @@ class Top10View(View) :
     )
 
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
-        with open(self.filename, "rb") as f:
+        with open(self.filename, "rb") as f :
             discord_file = discord.File(f, filename=self.filename)
         await interaction.response.send_message(content="Fichier tableur `xlsx`", file=discord_file)
         os.remove(self.filename)
-
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
