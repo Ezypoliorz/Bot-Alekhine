@@ -603,7 +603,7 @@ async def dept_autocomplete(
     return [
         app_commands.Choice(name=f"{code} - {nom["Nom"]}", value=code)
         for code, nom in DEPARTEMENTS.items()
-        if current.lower() in code.lower() or current.lower() in nom.lower()
+        if current.lower() in code.lower() or current.lower() in nom["Nom"].lower()
     ][:25]
 
 class DropdownMenuQuattro(View) :
