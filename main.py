@@ -462,11 +462,9 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
             max_len += 2 + 20/100*max_len
 
             worksheet.set_column(i+1, i+1, max_len)
-        
-        fichier = discord.File(f"Top {joueurs} club.xlsx")
 
     embed.set_footer(text="Bot Caen Alekhine")
-    top_10_view = Top10View(fichier=fichier)
+    top_10_view = Top10View(fichier=f"Top {joueurs} club.xlsx")
     await interaction.response.send_message(embed=embed, view=top_10_view, ephemeral=False)
     os.remove(f"Top {joueurs} club.xlsx")
 
