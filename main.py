@@ -365,7 +365,7 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"Un bot Discord développé pour le club",
-        value=f"Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine, par des membres du club",
+        value=f"Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine, par des membres du club.",
         inline=False
     )
     embed.add_field(
@@ -380,7 +380,7 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"N'hésitez pas à nous faire part de vos suggestions !",
-        value=f"\u2800",
+        value=f"<#1450441585765650472>",
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
@@ -400,7 +400,7 @@ class Top10View(View) :
     async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
         with open(self.filename, "rb") as f:
             discord_file = discord.File(f, filename=self.filename)
-        await interaction.response.send_message(content="Fichier tableur .xlsx", file=discord_file)
+        await interaction.response.send_message(content="Fichier tableur `xlsx`", file=discord_file)
         os.remove(self.filename)
 
 
@@ -501,30 +501,34 @@ async def player_autocomplete(
 async def joueur_command(interaction: discord.Interaction, joueur: str):
     await interaction.response.defer()
 
-    with open("joueurs.json", "r", encoding="utf-8") as fichier:
+    with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
-    with open("index_joueurs.json", "r", encoding="utf-8") as fichier:
+    with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
         players_indexes = json.load(fichier)
 
-    if joueur in players_indexes:
-        player = players[players_indexes[joueur]]
-    else:
-        player = données_ffe.search_player(joueur, "")
-        if player is None:
-            embed = discord.Embed(
-                title="Joueur non trouvé",
-                description=f"Aucun joueur enregistré sous le nom : **{joueur}**",
-                color=discord.Color.red()
-            )
-            embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.followup.send(embed=embed)
-            return
+    if f"{"".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}" in players_indexes :
+        player = players[players_indexes[f"{"".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}"]]
+    elif f"{"".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}" in players_indexes :
+        player = players[players_indexes[f"{"".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}"]]
+    else :
+        player = données_ffe.search_player("".join(joueur.split(" ")[:-1]).upper(), joueur.split(" ")[-1])
+        if player is None :
+            player = données_ffe.search_player("".join(joueur.split(" ")[1:]).upper(), joueur.split(" ")[0])
+            if player is None :
+                embed = discord.Embed(
+                    title="Joueur non trouvé",
+                    description=f"Aucun joueur enregistré sous le nom : **{joueur}**",
+                    color=discord.Color.red()
+                )
+                embed.set_footer(text="Bot Caen Alekhine")
+                await interaction.followup.send(embed=embed)
+                return
 
     embed = discord.Embed(
         title="Fiche Joueur",
         color=discord.Color.blue()
     )
-    embed.add_field(name="Nom Complet", value=player["NomComplet"], inline=False)
+    embed.add_field(name="Nom", value=player["NomComplet"], inline=False)
     
     if "NomDiscord" in player:
         embed.add_field(name="Utilisateur Discord", value=f"@{player['NomDiscord']}", inline=False)
