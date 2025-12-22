@@ -401,6 +401,8 @@ class Top10View(View) :
         with open(self.filename, "rb") as f:
             discord_file = discord.File(f, filename=self.filename)
         await interaction.followup.send(content="Fichier tableur .xlsx", file=discord_file)
+        os.remove(self.filename)
+
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
@@ -466,7 +468,6 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
     embed.set_footer(text="Bot Caen Alekhine")
     top_10_view = Top10View(fichier=f"Top {joueurs} club.xlsx")
     await interaction.response.send_message(embed=embed, view=top_10_view, ephemeral=False)
-    os.remove(f"Top {joueurs} club.xlsx")
 
 class LinkButtonFideView(discord.ui.View) :
     def __init__(self, url) :
