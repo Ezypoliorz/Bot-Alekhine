@@ -1,15 +1,17 @@
-# Environnement virtuel
 .venv/
 venv/
 env/
 
-# Variables d'environnement (Secret)
 .env
 
-# Cache Python
 __pycache__/
 *.py[cod]
+.pyc
 
-# Dossiers d'IDE
 .vscode/
 .idea/
+
+index_joueurs.json
+joueurs.json
+Output.txt
+tournois.json
