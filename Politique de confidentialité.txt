@@ -1,0 +1,25 @@
+    »»» Bot Alekhine «««
+    Bot Discord du club d'échecs Caen Alekhine
+    Politique de confidentialité / Privacy policy
+
+Le Bot Alekhine collecte des données sur :
+    - Le serveur : ID de serveur, nom du serveur, ID des salons, noms des salons
+    - Les utilisateurs du serveur : nom d'utilisateur, nom d'affichage
+    - Les messages : contenu de tous les messages du serveur, utlisateur l'ayant envoyé
+
+Dans le cas où le nom d'affichage de l'utilisateur est contenu dans la liste FFE des joueurs du club Caen Alekhine, des données sont récoltées et peuvent être affichées sur sa fiche FFE et fiche FIDE, accessibles publiquement.
+
+
+Ces données sont utilisées pour diverses commandes et fonctionnalités du bot :
+    - Commandes : /joueur, /top_10, /quattro, /tds, /clear
+    - Rappels : rappels Quattro et TDS
+    - Traitement et modération des messages dans le salon dédié au partage de ressources sur le serveur Caen Alekhine
+
+
+Ces données sont stockées uniquement dans la mémoire de travail du bot sur l'outil d'hébergement Render Web Services, et ne sont pas conservées à l'arrêt du bot. Les données FFE et FIDE sont synchronisées et donc réinitialisées à chaque redémarrage du bot, et tous les jours à 9:00 UTC.
+
+
+Toutes les données collectées par le Bot Alekhine ne sont en aucun cas transmises à des tiers, et seulement à l'équipe de développement du bot (@Desv-bot & @Bureau et responsables sur le serveur Caen Alekhine) dans le cadre du développement du bot, ainsi qu'aux utilisateurs du serveur Caen Alekhine, via les commandes.
+
+
+Tout utilisateur peut demander la suppression de ces données ainsi que l'arrêt de leur collecte sur le serveur Discord Caen Alekhine, par message privé Discord à @ezy_27, ou par mail à oscar.mazeure@orange.fr.
