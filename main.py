@@ -384,6 +384,7 @@ async def clear_command(interaction: discord.Interaction, messages: app_commands
     await interaction.followup.send(embed=embed, view=clear_validation_view,ephemeral=True)
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
+@app_commands.default_permissions(administrator=True)
 async def infos_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Informations Bot Alekhine",
@@ -436,6 +437,7 @@ class Top10View(View) :
 
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
+@app_commands.default_permissions(administrator=True)
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
@@ -526,6 +528,7 @@ async def player_autocomplete(
 
 @tree.command(name="joueur", description="Affiche les infos d'un joueur du club")
 @app_commands.describe(joueur="Nom et prénom du joueur")
+@app_commands.default_permissions(administrator=True)
 async def joueur_command(interaction: discord.Interaction, joueur: str):
     await interaction.response.defer()
 
@@ -591,6 +594,7 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 @app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
+@app_commands.default_permissions(administrator=True)
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
     nom_département = DEPARTEMENTS[département]["Nom"]
     phrase_département = DEPARTEMENTS[département]["Phrase"]
@@ -692,10 +696,12 @@ class DropdownMenuQuattro(View) :
         await interaction.followup.send(embed=embed, ephemeral=False)
 
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
+@app_commands.default_permissions(administrator=True)
 async def quattro_command(interaction: discord.Interaction) :
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=True, view=DropdownMenuQuattro())
 
 @tree.command(name="tds", description="Affiche les appariements du TDS")
+@app_commands.default_permissions(administrator=True)
 async def tds_command(interaction: discord.Interaction) :
     with open("tds.json", "r", encoding="utf-8") as fichier :
         tds = json.load(fichier)
