@@ -1,2 +1,66 @@
 [
+    {
+        "Reference": "70469",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U10 mixte",
+        "Date": "16/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70469"
+    },
+    {
+        "Reference": "70470",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U8 mixte",
+        "Date": "16/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70470"
+    },
+    {
+        "Reference": "70471",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U12 mixte",
+        "Date": "15/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70471"
+    },
+    {
+        "Reference": "70472",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U14 mixte",
+        "Date": "15/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70472"
+    },
+    {
+        "Reference": "70473",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U16 mixte",
+        "Date": "15/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70473"
+    },
+    {
+        "Reference": "70474",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U18 mixte",
+        "Date": "15/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70474"
+    },
+    {
+        "Reference": "70475",
+        "Ville": "LISIEUX",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie 2026-U20 mixte",
+        "Date": "15/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70475"
+    },
+    {
+        "Reference": "70216",
+        "Ville": "MATHIEU",
+        "Département": "14",
+        "NomTournoi": "Championnat de Normandie Féminin 2026 - Trophée Roza Lallemand",
+        "Date": "08/02/2026",
+        "LienFiche": "https://www.echecs.asso.fr/FicheTournoi.aspx?Ref=70216"
+    }
 ]

@@ -19,14 +19,6 @@ from dotenv import load_dotenv
 import sys
 import logging
 
-logging.getLogger("discord").setLevel(logging.ERROR)
-logging.getLogger("asyncio").setLevel(logging.ERROR)
-
-
-if sys.prefix != sys.base_prefix :
-    load_dotenv("Bot-Alekhine Test version.env")
-    print("Test version loaded")
-
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
 LOGS_CHANNEL_ID = int(os.getenv("LOGS_CHANNEL_ID"))
