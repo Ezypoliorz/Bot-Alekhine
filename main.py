@@ -35,7 +35,7 @@ QUATTRO_ROLE_ID = int(os.getenv("QUATTRO_ROLE_ID"))
 TDS_ROLE_ID = int(os.getenv("TDS_ROLE_ID"))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.getenv("ANNOUNCEMENTS_CHANNEL_ID"))
 TDS_QUATTRO_CHANNEL_ID = int(os.getenv("TDS_QUATTRO_CHANNEL_ID"))
-RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))
+"""RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))"""
 
 with open("départements.json", 'r', encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
@@ -278,7 +278,7 @@ async def on_ready() :
     if not FIRST_START:
         return
     
-    bot.add_view(LinkModerationView())
+    """bot.add_view(LinkModerationView())"""
     
     try :
         synced = await tree.sync()
@@ -742,7 +742,7 @@ async def tds_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
-class LinkModerationView(discord.ui.View) :
+"""class LinkModerationView(discord.ui.View) :
     def __init__(self) :
         super().__init__(timeout=None)
 
@@ -789,7 +789,7 @@ class LinkSubmitModal(discord.ui.Modal, title='Vérification du lien') :
         mod_channel = interaction.guild.get_channel(LOGS_CHANNEL_ID)
         content = f"Soumission de {interaction.user.mention}\nLien : {self.link_input.value}\nDescription : {self.desc_input.value}"
         await mod_channel.send(content=content, view=LinkModerationView())
-        await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)
+        await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)"""
 
 """@bot.event
 async def on_message(message) :
