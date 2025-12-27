@@ -14,19 +14,28 @@ from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 from unidecode import unidecode
 import pandas as pd
-import chess
-import chess.svg
-import io
-from cairosvg import svg2png
+import re
+from dotenv import load_dotenv
+import sys
+import logging
 
-DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-LOGS_CHANNEL_ID = int(os.environ.get("LOGS_CHANNEL_ID"))
-DEV_BOT_ROLE_ID = int(os.environ.get("DEV_BOT_ROLE_ID"))
-QUATTRO_ROLE_ID = int(os.environ.get("QUATTRO_ROLE_ID"))
-TDS_ROLE_ID = int(os.environ.get("TDS_ROLE_ID"))
-ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get("ANNOUNCEMENTS_CHANNEL_ID"))
-TDS_QUATTRO_CHANNEL_ID = int(os.environ.get("TDS_QUATTRO_CHANNEL_ID"))
+logging.getLogger("discord").setLevel(logging.ERROR)
+logging.getLogger("asyncio").setLevel(logging.ERROR)
+
+
+if sys.prefix != sys.base_prefix :
+    load_dotenv("Bot-Alekhine Test version.env")
+    print("Test version loaded")
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+GUILD_ID = int(os.getenv("GUILD_ID"))
+LOGS_CHANNEL_ID = int(os.getenv("LOGS_CHANNEL_ID"))
+DEV_BOT_ROLE_ID = int(os.getenv("DEV_BOT_ROLE_ID"))
+QUATTRO_ROLE_ID = int(os.getenv("QUATTRO_ROLE_ID"))
+TDS_ROLE_ID = int(os.getenv("TDS_ROLE_ID"))
+ANNOUNCEMENTS_CHANNEL_ID = int(os.getenv("ANNOUNCEMENTS_CHANNEL_ID"))
+TDS_QUATTRO_CHANNEL_ID = int(os.getenv("TDS_QUATTRO_CHANNEL_ID"))
+RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))
 
 with open("départements.json", 'r', encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
@@ -75,7 +84,7 @@ class QuattroReminderView(View) :
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         
         match_found = False
@@ -112,7 +121,7 @@ class QuattroReminderView(View) :
                 )
                 
                 embed.set_footer(text="Bot Caen Alekhine")
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await interaction.response.send_message(embed=embed, ephemeral=True)
                 match_found = True
                 return
 
@@ -123,7 +132,7 @@ class QuattroReminderView(View) :
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
@@ -216,7 +225,7 @@ async def daily_data_update() :
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
-            await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{DEV_BOT_ROLE_ID}>")
+            await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{QUATTRO_ROLE_ID}>")
             break
     
     with open("tds.json", "r", encoding="utf-8") as fichier :
@@ -339,7 +348,7 @@ class ClearValidationView(View) :
     def __init__(self, messages) :
         super().__init__(timeout=None)
         self.messages = messages
-        self.limit = messages if messages is None else messages + 1
+        self.limit = messages if messages is None else messages 
         self.message_title = "Nettoyage complet" if messages is None else "Nettoyage partiel"
     
     @discord.ui.button(
@@ -348,7 +357,11 @@ class ClearValidationView(View) :
         custom_id="supprimer_clear_button",
     )
 
-    async def supprimer_clear_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
+    async def supprimer_clear_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        await interaction.response.defer(ephemeral=True)
+
+        await interaction.delete_original_response()
+
         deleted = await interaction.channel.purge(limit=self.limit)
 
         embed = discord.Embed(
@@ -357,7 +370,11 @@ class ClearValidationView(View) :
             color=discord.Color.green()
         )
         embed.set_footer(text="Bot Caen Alekhine")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        try:
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except discord.NotFound :
+            await interaction.channel.send(embed=embed, delete_after=5)
 
 @tree.command(name="clear", description="Supprime les derniers messages")
 @app_commands.describe(messages="Nombre de messages à supprimer (Laisser vide pour vider le salon)")
@@ -387,7 +404,7 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"Des commandes",
-        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d'envoi de messages, et vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
+        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez `/` dans le champ d'envoi de messages, et vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
         inline=False
     )
     embed.add_field(
@@ -688,9 +705,9 @@ class DropdownMenuQuattro(View) :
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
 @app_commands.default_permissions(administrator=True)
 async def quattro_command(interaction: discord.Interaction) :
-    await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
+    await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=True, view=DropdownMenuQuattro())
 
-@tree.command(name="tds", description="Affiche la prochaine ronde de TDS")
+@tree.command(name="tds", description="Affiche les appariements du TDS")
 @app_commands.default_permissions(administrator=True)
 async def tds_command(interaction: discord.Interaction) :
     with open("tds.json", "r", encoding="utf-8") as fichier :
@@ -725,65 +742,84 @@ async def tds_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
-class LinkModerationView(discord.ui.View):
-    def __init__(self):
+class LinkModerationView(discord.ui.View) :
+    def __init__(self) :
         super().__init__(timeout=None)
 
     @discord.ui.button(label="Accepter le lien", style=discord.ButtonStyle.success, custom_id="link_accept")
-    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # On récupère le lien et l'auteur du texte du message
-        content = interaction.message.content
-        public_channel = interaction.guild.get_channel(ANNOUNCEMENTS_CHANNEL_ID)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        parts = interaction.message.content.split('\n', 2)
+        author_mention = parts[0].replace("Soumission de ", "")
+        link = parts[1].replace("Lien : ", "")
+        description = parts[2].replace("Description : ", "") if len(parts) > 2 else ""
+
+        public_channel = interaction.guild.get_channel(RESSOURCES_CHANNEL_ID)
         
-        await public_channel.send(f"🔗 **Lien partagé** :\n{content.split(':', 1)[1].strip()}")
-        await interaction.response.edit_message(content=f"✅ Lien validé par {interaction.user.mention}", view=None)
+        embed = discord.Embed(description=description, color=discord.Color.blue())
+        embed.set_author(name=f"Partagé par {interaction.user.display_name}")
+        embed.add_field(name="Lien", value=link)
+        
+        await public_channel.send(embed=embed)
+
+        await interaction.response.edit_message(content=f"Accepté par {interaction.user.mention}", view=None, delete_after=30)
 
     @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, custom_id="link_reject")
-    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(content=f"❌ Lien refusé par {interaction.user.mention}", view=None)
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        await interaction.response.edit_message(content=f"Refusé par {interaction.user.mention}", view=None, delete_after=30)
 
-class LinkSubmitModal(discord.ui.Modal, title='Vérification de lien'):
-    link_input = discord.ui.TextInput(label='Collez votre lien ici', style=discord.TextStyle.short, required=True)
-    reason_input = discord.ui.TextInput(label='Description du lien', style=discord.TextStyle.paragraph, required=False)
+class LinkSubmitModal(discord.ui.Modal, title='Vérification du lien') :
+    def __init__(self, default_text, link) :
+        super().__init__()
+        self.link = link
+        self.link_input = discord.ui.TextInput(
+            label='Lien détecté', 
+            default=self.link, 
+            style=discord.TextStyle.short
+        )
+        self.desc_input = discord.ui.TextInput(
+            label='Description / Message', 
+            default=default_text, 
+            style=discord.TextStyle.paragraph,
+            required=False
+        )
+        self.add_item(self.link_input)
+        self.add_item(self.desc_input)
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: discord.Interaction) :
         mod_channel = interaction.guild.get_channel(LOGS_CHANNEL_ID)
-        full_content = f"Lien de {interaction.user.mention} : {self.link_input.value}\nDescription : {self.reason_input.value}"
-        
-        await mod_channel.send(content=full_content, view=LinkModerationView())
-        await interaction.response.send_message("Votre lien a été soumis aux modérateurs.", ephemeral=True)
+        content = f"Soumission de {interaction.user.mention}\nLien : {self.link_input.value}\nDescription : {self.desc_input.value}"
+        await mod_channel.send(content=content, view=LinkModerationView())
+        await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)
 
-@bot.event
-async def on_message(message):
-    # On ne vérifie pas les messages du bot lui-même
-    if message.author == bot.user:
+"""@bot.event
+async def on_message(message) :
+    if message.author == bot.user :
         return
 
-    # On cible le salon où les liens doivent être modérés
-    if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID:
-        if "http://" in message.content.lower() or "https://" in message.content.lower():
-            # 1. On supprime le message original
+    if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID :
+        urls = re.findall(r'(https?://[^\s]+)', message.content)
+        
+        if urls :
+            found_link = urls[0]
+            remaining_text = message.content.replace(found_link, "").strip()
+            
             await message.delete()
             
-            # 2. On prévient l'utilisateur et on propose le formulaire
             view = View()
-            btn = discord.ui.Button(label="Soumettre mon lien", style=discord.ButtonStyle.primary)
+            btn = discord.ui.Button(label="Valider ma publication", style=discord.ButtonStyle.primary)
             
             async def btn_callback(interaction):
-                await interaction.response.send_modal(LinkSubmitModal())
+                await interaction.response.send_modal(LinkSubmitModal(remaining_text, found_link))
             
             btn.callback = btn_callback
             view.add_item(btn)
             
             await message.channel.send(
-                f"{message.author.mention}, les liens directs sont interdits ici. Merci de passer par le formulaire de modération.",
-                view=view,
-                delete_after=15 # Le message d'avertissement s'efface après 15s
+                f"{message.author.mention}, votre message contient un lien et doit être vérifié.", view=view, delete_after=30
             )
             return
 
-    # Important pour que les autres commandes continuent de fonctionner
-    await bot.process_commands(message)
+    await bot.process_commands(message)"""
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
