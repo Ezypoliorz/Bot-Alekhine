@@ -1,6 +1,5 @@
 # »»» Bot Alekhine «««
 # Bot Discord du club d'échecs Caen Alekhine
-# 
 
 import discord
 from discord.ext import commands, tasks
@@ -10,18 +9,33 @@ import données_ffe
 import json
 import os
 import threading
+import asyncio
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 from unidecode import unidecode
+import pandas as pd
+import re
+from dotenv import load_dotenv
+import sys
+import logging
 
-DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-LOGS_CHANNEL_ID = int(os.environ.get("LOGS_CHANNEL_ID"))
-DEV_BOT_ROLE_ID = int(os.environ.get("DEV_BOT_ROLE_ID"))
-QUATTRO_ROLE_ID = int(os.environ.get("QUATTRO_ROLE_ID"))
-TDS_ROLE_ID = int(os.environ.get("TDS_ROLE_ID"))
-ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get("ANNOUNCEMENTS_CHANNEL_ID"))
-TDS_QUATTRO_CHANNEL_ID = int(os.environ.get("TDS_QUATTRO_CHANNEL_ID"))
+logging.getLogger("discord").setLevel(logging.ERROR)
+logging.getLogger("asyncio").setLevel(logging.ERROR)
+
+
+if sys.prefix != sys.base_prefix :
+    load_dotenv("Bot-Alekhine Test version.env")
+    print("Test version loaded")
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+GUILD_ID = int(os.getenv("GUILD_ID"))
+LOGS_CHANNEL_ID = int(os.getenv("LOGS_CHANNEL_ID"))
+DEV_BOT_ROLE_ID = int(os.getenv("DEV_BOT_ROLE_ID"))
+QUATTRO_ROLE_ID = int(os.getenv("QUATTRO_ROLE_ID"))
+TDS_ROLE_ID = int(os.getenv("TDS_ROLE_ID"))
+ANNOUNCEMENTS_CHANNEL_ID = int(os.getenv("ANNOUNCEMENTS_CHANNEL_ID"))
+TDS_QUATTRO_CHANNEL_ID = int(os.getenv("TDS_QUATTRO_CHANNEL_ID"))
+RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))
 
 with open("départements.json", 'r', encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
@@ -70,7 +84,7 @@ class QuattroReminderView(View) :
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         
         match_found = False
@@ -107,7 +121,7 @@ class QuattroReminderView(View) :
                 )
                 
                 embed.set_footer(text="Bot Caen Alekhine")
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await interaction.response.send_message(embed=embed, ephemeral=True)
                 match_found = True
                 return
 
@@ -118,12 +132,10 @@ class QuattroReminderView(View) :
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.followup.send(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
 async def daily_data_update() :    
-    print("Mise à jour quotidienne des données...")
-    
     données_ffe.fetch_players()
     données_ffe.fetch_tournaments()
     
@@ -213,7 +225,7 @@ async def daily_data_update() :
                 inline=False
             )
             embed.set_footer(text="Bot Caen Alekhine")
-            await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{DEV_BOT_ROLE_ID}>")
+            await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{QUATTRO_ROLE_ID}>")
             break
     
     with open("tds.json", "r", encoding="utf-8") as fichier :
@@ -249,26 +261,7 @@ async def daily_data_update() :
             embed.set_footer(text="Bot Caen Alekhine")
             await channel_tds_quattro.send(embed=embed)
             break
-
-FIRST_START = True
-@bot.event
-async def on_ready() :
-    global FIRST_START
-    if not FIRST_START:
-        return
     
-    try :
-        synced = await tree.sync()
-    except Exception as e :
-        print(e)
-    
-    await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
-
-    if not daily_data_update.is_running() :
-        await daily_data_update()
-    if not daily_data_update.is_running() :
-        daily_data_update.start()
-
     embed = discord.Embed(
         title="Bot up and running",
         description=f"Connected as {bot.user} - ID : {bot.user.id}",
@@ -277,6 +270,25 @@ async def on_ready() :
     embed.set_footer(text="Bot Caen Alekhine")
     channel = bot.get_channel(LOGS_CHANNEL_ID)
     await channel.send(embed=embed)
+
+FIRST_START = True
+@bot.event
+async def on_ready() :
+    global FIRST_START
+    if not FIRST_START:
+        return
+    
+    bot.add_view(LinkModerationView())
+    
+    try :
+        synced = await tree.sync()
+    except Exception as e :
+        print(e)
+    
+    await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
+
+    if not daily_data_update.is_running():
+        await daily_data_update()
 
     FIRST_START = False
 
@@ -332,30 +344,54 @@ async def ping_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
+class ClearValidationView(View) :
+    def __init__(self, messages) :
+        super().__init__(timeout=None)
+        self.messages = messages
+        self.limit = messages if messages is None else messages 
+        self.message_title = "Nettoyage complet" if messages is None else "Nettoyage partiel"
+    
+    @discord.ui.button(
+        label="Supprimer",
+        style=discord.ButtonStyle.danger,
+        custom_id="supprimer_clear_button",
+    )
+
+    async def supprimer_clear_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        await interaction.response.defer(ephemeral=True)
+
+        await interaction.delete_original_response()
+
+        deleted = await interaction.channel.purge(limit=self.limit)
+
+        embed = discord.Embed(
+            title=self.message_title,
+            description=f"{len(deleted)-1 if self.messages is not None else len(deleted)} messages ont été supprimés.",
+            color=discord.Color.green()
+        )
+        embed.set_footer(text="Bot Caen Alekhine")
+
+        try:
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except discord.NotFound :
+            await interaction.channel.send(embed=embed, delete_after=5)
+
 @tree.command(name="clear", description="Supprime les derniers messages")
 @app_commands.describe(messages="Nombre de messages à supprimer (Laisser vide pour vider le salon)")
 @app_commands.default_permissions(administrator=True)
-async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :
-    if messages is None :
-        limit = None
-        message_title = "Nettoyage complet"
-    else :
-        limit = messages + 1
-        message_title = "Nettoyage partiel"
-    
+async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :    
     await interaction.response.defer(ephemeral=True)
 
-    deleted = await interaction.channel.purge(limit=limit)
-
     embed = discord.Embed(
-        title=message_title,
-        description=f"{len(deleted)-1 if messages is not None else len(deleted)} messages ont été supprimés.",
-        color=discord.Color.green()
-    )
+            title=f"Confirmer le nettoyage complet du salon ?" if messages is None else f"Confirmer la suppression de {messages} messages ?",
+            color=discord.Color.red()
+        )
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.followup.send(embed=embed, ephemeral=True)
+    clear_validation_view = ClearValidationView(messages=messages)
+    await interaction.followup.send(embed=embed, view=clear_validation_view,ephemeral=True)
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
+@app_commands.default_permissions(administrator=True)
 async def infos_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Informations Bot Alekhine",
@@ -363,12 +399,12 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"Un bot Discord développé pour le club",
-        value=f"Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine, par des membres du club",
+        value=f"Intégré au serveur Discord, il a été dévelopé spécialement pour le club Caen Alekhine, par des membres du club.",
         inline=False
     )
     embed.add_field(
         name=f"Des commandes",
-        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez \"/\" dans le champ d'envoi de messages; vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
+        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez `/` dans le champ d'envoi de messages, et vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
         inline=False
     )
     embed.add_field(
@@ -378,22 +414,46 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"N'hésitez pas à nous faire part de vos suggestions !",
-        value=f"\u2800",
+        value=f"<#1450441585765650472>",
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
+class Top10View(View) :
+    def __init__(self, fichier) :
+        super().__init__(timeout=None)
+        self.filename = fichier
+    
+    @discord.ui.button(
+        label="Exporter en tableau",
+        style=discord.ButtonStyle.primary,
+        custom_id="top_10_button",
+    )
+
+    async def top_10_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
+        with open(self.filename, "rb") as f :
+            discord_file = discord.File(f, filename=self.filename)
+        embed = discord.Embed(
+            title="Fichier tableur `xlsx`",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Bot Caen Alekhine")
+        await interaction.response.send_message(embed=embed, file=discord_file, ephemeral=True)
+        os.remove(self.filename)
+
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
+@app_commands.default_permissions(administrator=True)
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
     embed = discord.Embed(
-        title="Classement Top 10 du Club",
+        title=f"Classement Top {joueurs} du Club",
         color=discord.Color.blue()
     )
     number_players = 0
+    df = {"Placement" : [], "NomComplet" : [], "ELO" : []}
     for index, player in enumerate(players) :
         if "Actif" in player and player["Actif"] == True :
             embed.add_field(
@@ -401,11 +461,51 @@ async def top_10_command(interaction: discord.Interaction, joueurs : app_command
                 value=f"{player["Elo"][:-2]} Elo",
                 inline=False
             )
+            df["Placement"].append(f"#{number_players+1}")
+            df["NomComplet"].append(f"{player["NomComplet"]}")
+            df["ELO"].append(f"{player["Elo"]}")
             number_players += 1
         if number_players == joueurs :
             break
+    df = pd.DataFrame(df)
+    with pd.ExcelWriter(f"Top {joueurs} club.xlsx", engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Sheet1", startrow=1, startcol=1)
+        
+        workbook  = writer.book
+        worksheet = writer.sheets["Sheet1"]
+
+        bold_bordure = workbook.add_format({
+            'font_name': 'Arial',
+            'font_size': 14,
+            'font_color': '#3498db',
+            'bold': True,
+            'align': 'center',
+            'border': 1
+        })
+
+        bordure = workbook.add_format({
+            'font_name': 'Arial',
+            'font_size': 14,
+            'font_color': 'black',
+            'align': 'center',
+            'border': 1
+        })
+
+        worksheet.conditional_format("B2:D2", {"type": "no_errors", "format": bold_bordure})
+        worksheet.conditional_format(f"B3:D{2+joueurs}", {"type": "no_errors", "format": bordure})
+
+        for i, col in enumerate(df.columns):
+            max_len = max(
+                df[col].astype(str).map(len).max(),
+                len(str(col))
+            )
+            max_len += 2 + 20/100*max_len
+
+            worksheet.set_column(i+1, i+1, max_len)
+
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.response.send_message(embed=embed, ephemeral=False)
+    top_10_view = Top10View(fichier=f"Top {joueurs} club.xlsx")
+    await interaction.response.send_message(embed=embed, view=top_10_view, ephemeral=False)
 
 class LinkButtonFideView(discord.ui.View) :
     def __init__(self, url) :
@@ -417,80 +517,77 @@ class LinkButtonFideView(discord.ui.View) :
             url=url
         ))
 
-@tree.command(name="joueur", description="Affiche les infos d'un joueur")
-@app_commands.describe(nom="Nom de famille du joueur recherché")
-@app_commands.describe(prénom="Prénom du joueur recherché")
-async def joueur_command(interaction: discord.Interaction, nom:str, prénom:str) :
-    nom = unidecode(nom.upper())
-    prénom = unidecode(prénom.upper())
-    nom_complet_debut = "".join(caractère for caractère in nom if caractère.isalpha()) + "".join(caractère for caractère in prénom if caractère.isalpha())
+async def player_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    try:
+        with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
+            players_indexes = json.load(fichier)
+        
+        return [
+            app_commands.Choice(name=player_name, value=player_name)
+            for player_name in players_indexes.keys()
+            if current.lower() in player_name.lower()
+        ][:25]
+    except Exception :
+        return []
+
+@tree.command(name="joueur", description="Affiche les infos d'un joueur du club")
+@app_commands.describe(joueur="Nom et prénom du joueur")
+@app_commands.default_permissions(administrator=True)
+async def joueur_command(interaction: discord.Interaction, joueur: str):
+    await interaction.response.defer()
+
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
     with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
         players_indexes = json.load(fichier)
-    nom_complet = None
-    for player_index in players_indexes :
-        if nom_complet_debut in "".join(caractère for caractère in unidecode(player_index.upper()) if caractère.isalpha()) :
-            nom_complet = player_index
-            break
-    if nom_complet == None :
-        player = données_ffe.search_player(nom, prénom)
-        if player is None :
-            embed = discord.Embed(
-                title="Aucun joueur n'est enregistré à ce nom",
-                color=discord.Color.red()
-            )
-            embed.set_footer(text="Bot Caen Alekhine")
-            await interaction.response.send_message(embed=embed, ephemeral=False)
-            return None
+
+    if f"{" ".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}" in players_indexes :
+        player = players[players_indexes[f"{"".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}"]]
+    elif f"{" ".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}" in players_indexes :
+        player = players[players_indexes[f"{"".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}"]]
     else :
-        player = players[players_indexes[nom_complet]]
+        player = données_ffe.search_player("".join(joueur.split(" ")[:-1]).upper(), joueur.split(" ")[-1])
+        if player is None :
+            player = données_ffe.search_player("".join(joueur.split(" ")[1:]).upper(), joueur.split(" ")[0])
+            if player is None :
+                embed = discord.Embed(
+                    title="Joueur non trouvé",
+                    description=f"Aucun joueur enregistré sous le nom : **{joueur}**",
+                    color=discord.Color.red()
+                )
+                embed.set_footer(text="Bot Caen Alekhine")
+                await interaction.followup.send(embed=embed)
+                return
+
     embed = discord.Embed(
-        title="Info joueur",
+        title="Fiche Joueur",
         color=discord.Color.blue()
     )
-    embed.add_field(
-        name=f"Nom",
-        value=f"{player["NomComplet"]}",
-        inline=False
-    )
-    if "NomDiscord" in player :
-        embed.add_field(
-            name=f"Nom d'utilisateur Discord",
-            value=f"{player["NomDiscord"]}",
-            inline=False
-        )
-    embed.add_field(
-        name=f"Elo Standard",
-        value=f"{player["Elo"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"Elo Rapide",
-        value=f"{player["Rapide"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"Elo Blitz",
-        value=f"{player["Blitz"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"Club",
-        value=f"{player["Club"]}",
-        inline=False
-    )
-    embed.add_field(
-        name=f"N° FFE",
-        value=f"{player["NrFFE"]}",
-        inline=False
-    )
+    embed.add_field(name="Nom", value=player["NomComplet"], inline=False)
+    
+    if "NomDiscord" in player:
+        embed.add_field(name="Utilisateur Discord", value=f"@{player['NomDiscord']}", inline=False)
+    
+    embed.add_field(name="Elo Standard", value=player["Elo"], inline=True)
+    embed.add_field(name="Elo Rapide", value=player["Rapide"], inline=True)
+    embed.add_field(name="Elo Blitz", value=player["Blitz"], inline=True)
+    embed.add_field(name="Club", value=player["Club"], inline=False)
+    embed.add_field(name="N° FFE", value=player["NrFFE"], inline=True)
+    
     embed.set_footer(text="Bot Caen Alekhine")
-    if player["FicheFIDE"] :
-        link_button_fide_view = LinkButtonFideView(url=player["FicheFIDE"])
-        await interaction.response.send_message(embed=embed, view=link_button_fide_view, ephemeral=False)
-    else :
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+
+    if player.get("FicheFIDE"):
+        view = LinkButtonFideView(url=player["FicheFIDE"])
+        await interaction.followup.send(embed=embed, view=view)
+    else:
+        await interaction.followup.send(embed=embed)
+
+@joueur_command.autocomplete("joueur")
+async def joueur_auto(interaction: discord.Interaction, current: str) :
+    return await player_autocomplete(interaction, current)
 
 class LinkButtonFFETournamentsView(discord.ui.View) :
     def __init__(self, url) :
@@ -504,6 +601,7 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 @app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
+@app_commands.default_permissions(administrator=True)
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
     nom_département = DEPARTEMENTS[département]["Nom"]
     phrase_département = DEPARTEMENTS[département]["Phrase"]
@@ -546,9 +644,9 @@ async def dept_autocomplete(
     current: str,
 ) -> list[app_commands.Choice[str]]:
     return [
-        app_commands.Choice(name=f"{code} - {nom}", value=code)
+        app_commands.Choice(name=f"{code} - {nom["Nom"]}", value=code)
         for code, nom in DEPARTEMENTS.items()
-        if current.lower() in code.lower() or current.lower() in nom.lower()
+        if current.lower() in code.lower() or current.lower() in nom["Nom"].lower()
     ][:25]
 
 class DropdownMenuQuattro(View) :
@@ -607,9 +705,9 @@ class DropdownMenuQuattro(View) :
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
 @app_commands.default_permissions(administrator=True)
 async def quattro_command(interaction: discord.Interaction) :
-    await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=False, view=DropdownMenuQuattro())
+    await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=True, view=DropdownMenuQuattro())
 
-@tree.command(name="tds", description="Affiche la prochaine ronde de TDS")
+@tree.command(name="tds", description="Affiche les appariements du TDS")
 @app_commands.default_permissions(administrator=True)
 async def tds_command(interaction: discord.Interaction) :
     with open("tds.json", "r", encoding="utf-8") as fichier :
@@ -644,6 +742,85 @@ async def tds_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
+class LinkModerationView(discord.ui.View) :
+    def __init__(self) :
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Accepter le lien", style=discord.ButtonStyle.success, custom_id="link_accept")
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        parts = interaction.message.content.split('\n', 2)
+        author_mention = parts[0].replace("Soumission de ", "")
+        link = parts[1].replace("Lien : ", "")
+        description = parts[2].replace("Description : ", "") if len(parts) > 2 else ""
+
+        public_channel = interaction.guild.get_channel(RESSOURCES_CHANNEL_ID)
+        
+        embed = discord.Embed(description=description, color=discord.Color.blue())
+        embed.set_author(name=f"Partagé par {interaction.user.display_name}")
+        embed.add_field(name="Lien", value=link)
+        
+        await public_channel.send(embed=embed)
+
+        await interaction.response.edit_message(content=f"Accepté par {interaction.user.mention}", view=None, delete_after=30)
+
+    @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, custom_id="link_reject")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        await interaction.response.edit_message(content=f"Refusé par {interaction.user.mention}", view=None, delete_after=30)
+
+class LinkSubmitModal(discord.ui.Modal, title='Vérification du lien') :
+    def __init__(self, default_text, link) :
+        super().__init__()
+        self.link = link
+        self.link_input = discord.ui.TextInput(
+            label='Lien détecté', 
+            default=self.link, 
+            style=discord.TextStyle.short
+        )
+        self.desc_input = discord.ui.TextInput(
+            label='Description / Message', 
+            default=default_text, 
+            style=discord.TextStyle.paragraph,
+            required=False
+        )
+        self.add_item(self.link_input)
+        self.add_item(self.desc_input)
+
+    async def on_submit(self, interaction: discord.Interaction) :
+        mod_channel = interaction.guild.get_channel(LOGS_CHANNEL_ID)
+        content = f"Soumission de {interaction.user.mention}\nLien : {self.link_input.value}\nDescription : {self.desc_input.value}"
+        await mod_channel.send(content=content, view=LinkModerationView())
+        await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)
+
+"""@bot.event
+async def on_message(message) :
+    if message.author == bot.user :
+        return
+
+    if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID :
+        urls = re.findall(r'(https?://[^\s]+)', message.content)
+        
+        if urls :
+            found_link = urls[0]
+            remaining_text = message.content.replace(found_link, "").strip()
+            
+            await message.delete()
+            
+            view = View()
+            btn = discord.ui.Button(label="Valider ma publication", style=discord.ButtonStyle.primary)
+            
+            async def btn_callback(interaction):
+                await interaction.response.send_modal(LinkSubmitModal(remaining_text, found_link))
+            
+            btn.callback = btn_callback
+            view.add_item(btn)
+            
+            await message.channel.send(
+                f"{message.author.mention}, votre message contient un lien et doit être vérifié.", view=view, delete_after=30
+            )
+            return
+
+    await bot.process_commands(message)"""
+
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
     if isinstance(error, app_commands.MissingAnyRole) :
@@ -676,6 +853,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
+        embed.set_footer(text="Bot Caen Alekhine")
         await channel.send(content=f"<@&{DEV_BOT_ROLE_ID}>", embed=embed)
         return
 
