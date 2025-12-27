@@ -14,14 +14,15 @@ from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
 from unidecode import unidecode
 
-DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-GUILD_ID = int(os.environ.get("GUILD_ID"))
-LOGS_CHANNEL_ID = int(os.environ.get("LOGS_CHANNEL_ID"))
-DEV_BOT_ROLE_ID = int(os.environ.get("DEV_BOT_ROLE_ID"))
-QUATTRO_ROLE_ID = int(os.environ.get("QUATTRO_ROLE_ID"))
-TDS_ROLE_ID = int(os.environ.get("TDS_ROLE_ID"))
-ANNOUNCEMENTS_CHANNEL_ID = int(os.environ.get("ANNOUNCEMENTS_CHANNEL_ID"))
-TDS_QUATTRO_CHANNEL_ID = int(os.environ.get("TDS_QUATTRO_CHANNEL_ID"))
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+GUILD_ID = int(os.getenv("GUILD_ID"))
+LOGS_CHANNEL_ID = int(os.getenv("LOGS_CHANNEL_ID"))
+DEV_BOT_ROLE_ID = int(os.getenv("DEV_BOT_ROLE_ID"))
+QUATTRO_ROLE_ID = int(os.getenv("QUATTRO_ROLE_ID"))
+TDS_ROLE_ID = int(os.getenv("TDS_ROLE_ID"))
+ANNOUNCEMENTS_CHANNEL_ID = int(os.getenv("ANNOUNCEMENTS_CHANNEL_ID"))
+TDS_QUATTRO_CHANNEL_ID = int(os.getenv("TDS_QUATTRO_CHANNEL_ID"))
+"""RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))"""
 
 with open("départements.json", 'r', encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
@@ -643,6 +644,85 @@ async def tds_command(interaction: discord.Interaction) :
 
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
+
+"""class LinkModerationView(discord.ui.View) :
+    def __init__(self) :
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Accepter le lien", style=discord.ButtonStyle.success, custom_id="link_accept")
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        parts = interaction.message.content.split('\n', 2)
+        author_mention = parts[0].replace("Soumission de ", "")
+        link = parts[1].replace("Lien : ", "")
+        description = parts[2].replace("Description : ", "") if len(parts) > 2 else ""
+
+        public_channel = interaction.guild.get_channel(RESSOURCES_CHANNEL_ID)
+        
+        embed = discord.Embed(description=description, color=discord.Color.blue())
+        embed.set_author(name=f"Partagé par {interaction.user.display_name}")
+        embed.add_field(name="Lien", value=link)
+        
+        await public_channel.send(embed=embed)
+
+        await interaction.response.edit_message(content=f"Accepté par {interaction.user.mention}", view=None, delete_after=30)
+
+    @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, custom_id="link_reject")
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        await interaction.response.edit_message(content=f"Refusé par {interaction.user.mention}", view=None, delete_after=30)
+
+class LinkSubmitModal(discord.ui.Modal, title='Vérification du lien') :
+    def __init__(self, default_text, link) :
+        super().__init__()
+        self.link = link
+        self.link_input = discord.ui.TextInput(
+            label='Lien détecté', 
+            default=self.link, 
+            style=discord.TextStyle.short
+        )
+        self.desc_input = discord.ui.TextInput(
+            label='Description / Message', 
+            default=default_text, 
+            style=discord.TextStyle.paragraph,
+            required=False
+        )
+        self.add_item(self.link_input)
+        self.add_item(self.desc_input)
+
+    async def on_submit(self, interaction: discord.Interaction) :
+        mod_channel = interaction.guild.get_channel(LOGS_CHANNEL_ID)
+        content = f"Soumission de {interaction.user.mention}\nLien : {self.link_input.value}\nDescription : {self.desc_input.value}"
+        await mod_channel.send(content=content, view=LinkModerationView())
+        await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)"""
+
+"""@bot.event
+async def on_message(message) :
+    if message.author == bot.user :
+        return
+
+    if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID :
+        urls = re.findall(r'(https?://[^\s]+)', message.content)
+        
+        if urls :
+            found_link = urls[0]
+            remaining_text = message.content.replace(found_link, "").strip()
+            
+            await message.delete()
+            
+            view = View()
+            btn = discord.ui.Button(label="Valider ma publication", style=discord.ButtonStyle.primary)
+            
+            async def btn_callback(interaction):
+                await interaction.response.send_modal(LinkSubmitModal(remaining_text, found_link))
+            
+            btn.callback = btn_callback
+            view.add_item(btn)
+            
+            await message.channel.send(
+                f"{message.author.mention}, votre message contient un lien et doit être vérifié.", view=view, delete_after=30
+            )
+            return
+
+    await bot.process_commands(message)"""
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
