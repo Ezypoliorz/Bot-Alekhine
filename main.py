@@ -16,8 +16,15 @@ from unidecode import unidecode
 import pandas as pd
 import re
 from dotenv import load_dotenv
+<<<<<<< Updated upstream
 import sys
 import logging
+=======
+import requests
+from supabase import create_client, Client
+
+load_dotenv("Bot-Alekhine Test version.env")
+>>>>>>> Stashed changes
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
@@ -201,11 +208,19 @@ async def daily_data_update() :
             for embed in message.embeds :
                 posted_titles.add(embed.title)
 
+<<<<<<< Updated upstream
     for ronde, quattro_date in enumerate(quattro["Dates"]) :
         tournament_date = datetime.strptime(quattro_date, "%d/%m/%Y").date()
         if (abs(today - tournament_date) <= timedelta(days=7) and 
             f"Ronde {ronde+1} de Quattro très bientôt !" not in posted_titles) :
             quattro_reminder_view = QuattroReminderView(ronde=ronde)
+=======
+    for match in matches :
+        tournament_date = datetime.strptime(match["date"], "%d/%m/%Y").date()
+        if tournament_date > today and (abs(today - tournament_date) <= timedelta(days=7) and 
+            f"Ronde {match["id"]} de Quattro très bientôt !" not in posted_titles) :
+            quattro_reminder_view = QuattroReminderView(ronde=match["id"])
+>>>>>>> Stashed changes
             embed = discord.Embed(
                 title=f"Ronde {ronde+1} de Quattro très bientôt !",
                 description=quattro_date,
@@ -330,11 +345,26 @@ async def on_member_join(member: discord.Member) :
 async def ping_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Pong !",
-        description=f"Latence : {round(bot.latency * 1000)}ms",
+        description=f"Latence : **{round(bot.latency * 1000)}ms**",
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
+<<<<<<< Updated upstream
     await interaction.response.send_message(embed=embed)
+=======
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@tree.command(name="sync", description="Synchronise et actualise les données du bot")
+@app_commands.default_permissions(administrator=True)
+async def sync_command(interaction: discord.Interaction) :
+    embed = discord.Embed(
+        title="Processus en cours",
+        color=discord.Color.orange()
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+    await daily_data_update()
+>>>>>>> Stashed changes
 
 class ClearValidationView(View) :
     def __init__(self, messages) :
@@ -531,6 +561,7 @@ async def player_autocomplete(
 async def joueur_command(interaction: discord.Interaction, joueur: str):
     await interaction.response.defer()
 
+<<<<<<< Updated upstream
     with open("joueurs.json", "r", encoding="utf-8") as fichier :
         players = json.load(fichier)
     with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
@@ -548,12 +579,28 @@ async def joueur_command(interaction: discord.Interaction, joueur: str):
                 embed = discord.Embed(
                     title="Joueur non trouvé",
                     description=f"Aucun joueur enregistré sous le nom : **{joueur}**",
+=======
+    response = supabase_client.table("Joueurs") \
+        .select("*") \
+        .eq("nom", nom.upper()) \
+        .eq("prénom", prénom.capitalize()) \
+        .execute()
+    players = response.data
+
+    if len(players) == 0 :
+        players = données_ffe.search_player(prénom=prénom, nom=nom)
+        if len(players) == 0 :
+            embed = discord.Embed(
+                    title="Joueur non trouvé",
+                    description=f"Aucun joueur enregistré sous le nom : **{nom.upper()} {prénom.capitalize()}** ",
+>>>>>>> Stashed changes
                     color=discord.Color.red()
                 )
                 embed.set_footer(text="Bot Caen Alekhine")
                 await interaction.followup.send(embed=embed)
                 return
 
+<<<<<<< Updated upstream
     embed = discord.Embed(
         title="Fiche Joueur",
         color=discord.Color.blue()
@@ -570,6 +617,30 @@ async def joueur_command(interaction: discord.Interaction, joueur: str):
     embed.add_field(name="N° FFE", value=player["NrFFE"], inline=True)
     
     embed.set_footer(text="Bot Caen Alekhine")
+=======
+    for player in players :
+        embed = discord.Embed(
+            title="Fiche Joueur",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Nom", value=f"{nom.upper()} {prénom.capitalize()}", inline=False)
+        
+        if "discord_username" in player:
+            embed.add_field(name="Utilisateur Discord", value=f"@{player["discord_username"]}", inline=False)
+        
+        embed.add_field(name="Elo Standard", value=player["elo_standard"], inline=True)
+        embed.add_field(name="Elo Rapide", value=player["elo_rapide"], inline=True)
+        embed.add_field(name="Elo Blitz", value=player["elo_blitz"], inline=True)
+        embed.add_field(name="Club", value=player["club"], inline=False)
+        embed.add_field(name="N° FFE", value=player["id"], inline=True)
+        contacts = ""
+        if player["contact"] :
+            for contact in player["contact"] :
+                contacts += f"{contact}\n"
+            embed.add_field(name="Contact", value=contacts, inline=False)
+        
+        embed.set_footer(text="Bot Caen Alekhine")
+>>>>>>> Stashed changes
 
     if player.get("FicheFIDE"):
         view = LinkButtonFideView(url=player["FicheFIDE"])
@@ -671,7 +742,20 @@ class DropdownMenuQuattro(View) :
         dates = données["Dates"]
         poule = interaction.data["values"][0]
 
+<<<<<<< Updated upstream
         await interaction.response.defer()
+=======
+        response = supabase_client.table("Poules_Quattro") \
+            .select("id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom)") \
+            .eq("nom", interaction.data["values"][0]) \
+            .execute()
+        poule = response.data[0]
+        
+        response = supabase_client.table("Matches Quattro") \
+            .select("*") \
+            .execute()
+        matches = response.data
+>>>>>>> Stashed changes
 
         embed = discord.Embed(
             title=f"Appariements {poule}",
@@ -753,7 +837,15 @@ async def tds_command(interaction: discord.Interaction) :
         
         await public_channel.send(embed=embed)
 
+<<<<<<< Updated upstream
         await interaction.response.edit_message(content=f"Accepté par {interaction.user.mention}", view=None, delete_after=30)
+=======
+@tree.command(name="chesscom", description="Affichez les infos d'un compte Chess.com")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(utilisateur="Nom d'utilisateur recherché")
+async def chesscom_command(interaction: discord.Interaction, utilisateur:str) :
+    await interaction.response.defer(ephemeral=False)
+>>>>>>> Stashed changes
 
     @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, custom_id="link_reject")
     async def reject(self, interaction: discord.Interaction, button: discord.ui.Button) :
@@ -783,10 +875,18 @@ class LinkSubmitModal(discord.ui.Modal, title='Vérification du lien') :
         await mod_channel.send(content=content, view=LinkModerationView())
         await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)"""
 
+<<<<<<< Updated upstream
 """@bot.event
 async def on_message(message) :
     if message.author == bot.user :
         return
+=======
+@tree.command(name="lichess", description="Affichez les infos d'un compte Lichess")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(utilisateur="Nom d'utilisateur recherché")
+async def lichess_command(interaction: discord.Interaction, utilisateur:str) :
+    await interaction.response.defer(ephemeral=False)
+>>>>>>> Stashed changes
 
     if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID :
         urls = re.findall(r'(https?://[^\s]+)', message.content)
@@ -840,14 +940,39 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         else :
             await interaction.response.send_message(embed=embed, ephemeral=True)
         embed = discord.Embed(
+<<<<<<< Updated upstream
             title="Une erreur est survenue ",
             description=f"Erreur :\n{error}",
+=======
+            title="Une erreur est survenue",
+            description=f"**Erreur :**\n{error}",
+>>>>>>> Stashed changes
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)
         embed.set_footer(text="Bot Caen Alekhine")
         await channel.send(content=f"<@&{DEV_BOT_ROLE_ID}>", embed=embed)
         return
+
+@bot.event
+async def on_guild_join(guild) :
+    if guild.id != GUILD_ID :
+        try:
+            channel = guild.system_channel or next((x for x in guild.text_channels if x.permissions_for(guild.me).send_messages), None)
+            if channel:
+                await channel.send("Le Bot Alekhine est un bot privé rśervé pour l'utilisation du serveur Discord du club d'échecs Caen Alekhine. Le bot va donc être automatiquement retiré de ce serveur.\nThe Bot Alekhine is a private bot reserved for the use of the Caen Alekhine chess club Discord server. The bot will now automatically be removed from this server.")
+        except Exception :
+            pass
+
+        await guild.leave()
+        embed = discord.Embed(
+            title="Le bot a quitté un serveur non autorisé",
+            description=f"{guild.name} ({guild.id})",
+            color=discord.Color.orange(),
+        )
+        channel = bot.get_channel(LOGS_CHANNEL_ID)
+        embed.set_footer(text="Bot Caen Alekhine")
+        await channel.send(embed=embed)
 
 if __name__ == "__main__" :
 
