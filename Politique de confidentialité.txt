@@ -16,10 +16,13 @@ Ces données sont utilisées pour diverses commandes et fonctionnalités du bot 
     - Traitement et modération des messages dans le salon dédié au partage de ressources sur le serveur Caen Alekhine
 
 
-Ces données sont stockées uniquement dans la mémoire de travail du bot sur l'outil d'hébergement Render Web Services, et ne sont pas conservées à l'arrêt du bot. Les données FFE et FIDE sont synchronisées et donc réinitialisées à chaque redémarrage du bot, et tous les jours à 9:00 UTC.
+Ces données sont stockées dans une base de données SQL via le service de Supabase, et sont stockées sur le serveur AWS EU West 3. L'entièreté des données sont protégées par une Row Level Security (RLS) de PostgreSQL, et ne sont ainsi accessibles que par le Bot Alekhine, et ne peuvent en aucun cas être affichées ni modifiées par un tiers. Ces données sont mises à jour tous à chaque redémarrage du bot, et tous les jours à 9h 30.
 
 
-Toutes les données collectées par le Bot Alekhine ne sont en aucun cas transmises à des tiers, et seulement à l'équipe de développement du bot (@Desv-bot & @Bureau et responsables sur le serveur Caen Alekhine) dans le cadre du développement du bot, ainsi qu'aux utilisateurs du serveur Caen Alekhine, via les commandes.
+Des données supplémentaire sont collectées sur les comptes Chess.com et Lichess de n'importe quel utilisateur de ces plateformes, via les commandes /chesscom et /lichess. Seules les données accessibles publiquement sont collectées, et ne sont pas stockées dans les bases de données.
 
 
-Tout utilisateur peut demander la suppression de ces données ainsi que l'arrêt de leur collecte sur le serveur Discord Caen Alekhine, par message privé Discord à @ezy_27, ou par mail à oscar.mazeure@orange.fr.
+Toutes les données collectées par le Bot Alekhine ne sont en aucun cas transmises à des tiers, et seulement à l'équipe de développement du bot (@Dev-bot & @Bureau et responsables sur le serveur Caen Alekhine) dans le cadre du développement du bot, ainsi qu'aux utilisateurs du serveur Caen Alekhine, via les commandes.
+
+
+Tout utilisateur peut demander la suppression de ces données ainsi que l'arrêt de leur collecte sur le serveur Discord Caen Alekhine, par message privé Discord à @ezy_27, ou par mail à oscar.mazeure@orange.fr, conformément à la RGPD.

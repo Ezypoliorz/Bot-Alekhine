@@ -10,15 +10,16 @@ import données_ffe
 import json
 import os
 import threading
-import asyncio
 from flask import Flask
 from datetime import datetime, date, timedelta, timezone, time
+from zoneinfo import ZoneInfo
 from unidecode import unidecode
 import pandas as pd
 import re
 from dotenv import load_dotenv
-import sys
-import logging
+import requests
+from supabase import create_client, Client
+
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
@@ -28,10 +29,29 @@ QUATTRO_ROLE_ID = int(os.getenv("QUATTRO_ROLE_ID"))
 TDS_ROLE_ID = int(os.getenv("TDS_ROLE_ID"))
 ANNOUNCEMENTS_CHANNEL_ID = int(os.getenv("ANNOUNCEMENTS_CHANNEL_ID"))
 TDS_QUATTRO_CHANNEL_ID = int(os.getenv("TDS_QUATTRO_CHANNEL_ID"))
-"""RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))"""
+BUG_REPORT_CHANNEL_ID =  int(os.getenv("BUG_REPORT_CHANNEL_ID"))
+#RESSOURCES_CHANNEL_ID = int(os.getenv("RESSOURCES_CHANNEL_ID"))
 
-with open("départements.json", 'r', encoding="utf-8") as fichier :
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+TIMEZONE = ZoneInfo("Europe/Paris")
+
+with open("départements.json", "r", encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
+
+CHESS_COM_BASE_URL = "https://api.chess.com/pub"
+CHESS_COM_HEADERS = {
+    "User-Agent": "Bot Alekhine"
+}
+
+LICHESS_BASE_URL = "https://lichess.org/api"
+LICHESS_TOKEN = os.getenv("LICHESS_TOKEN")
+LICHESS_HEADERS = {
+    "Authorization": f"Bearer {LICHESS_TOKEN}",
+    "Accept": "application/json"
+}
     
 intents = discord.Intents.default()
 intents.message_content = True
@@ -41,99 +61,86 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 tree = bot.tree
 
 class QuattroReminderView(View) :
-    def __init__(self, ronde) :
+    def __init__(self, ronde=None) :
         super().__init__(timeout=None)
         self.ronde = ronde
-    
+
     @discord.ui.button(
         label="Voir mon match",
         style=discord.ButtonStyle.primary,
         custom_id="quattro_reminder_button",
     )
-
-    async def quattro_reminder_button_callback(self, interaction:discord.Interaction, button:discord.ui.Button) :
+    async def quattro_reminder_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button) :
+        if self.ronde is None:
+            try :
+                title = interaction.message.embeds[0].title
+                self.ronde = int(re.search(r"Ronde (\d+)", title).group(1)) - 1
+            except Exception :
+                return await interaction.response.send_message("Impossible de récupérer la ronde", ephemeral=True)
+            
         user = interaction.user
         username = user.name
-        
-        with open("joueurs.json", "r", encoding="utf-8") as fichier :
-            joueurs = json.load(fichier)
-        
-        with open("quattro.json", "r", encoding="utf-8") as fichier :
-            quattro = json.load(fichier)
-        
-        with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
-            players_indexes = json.load(fichier)
 
-        player_nom_complet = None
-        for joueur_data in joueurs :
-            if joueur_data.get("NomDiscord") == username :
-                player_nom_complet = joueur_data["NomComplet"]
-                break
-        
-        if player_nom_complet is None :
+        response = supabase_client.table("Joueurs") \
+            .select("id, nom, prénom, elo_standard, classement, actif") \
+            .eq("discord_username", username) \
+            .execute()
+        players_list = response.data
+
+        if len(players_list) == 0 :
             embed = discord.Embed(
-                    title=f"Vous n'êtes pas trouvé dans la liste des joueurs.",
-                    description="Merci de vérifier votre nom Discord. Sinon, expliquez votre problème en mentionnant \"@Dev-bot\"",
+                    title=f"Vous n'êtes pas trouvé dans la liste des joueurs",
+                    description=f"Merci de vérifier votre nom Discord. Sinon, expliquez votre problème dans <#{BUG_REPORT_CHANNEL_ID}> !",
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        
-        match_found = False
-        for poule_name, poule_members in quattro["Appariements"].items() :
-            if player_nom_complet in poule_members :
-                pairings_ronde = quattro["Matches"][self.ronde]
-                embed = discord.Embed(
-                    title=f"Votre prochain match de Quattro",
-                    color=discord.Color.purple()
-                )
+        else :
+            player = players_list[0]
 
-                match_a_indices = pairings_ronde[0:2]
-                match_b_indices = pairings_ronde[2:4]
-                
-                player_index_in_poule = poule_members.index(player_nom_complet)
+        response = supabase_client.table("Poules_Quattro") \
+            .select("id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom, elo_standard), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom, elo_standard), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom, elo_standard), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom, elo_standard)") \
+            .or_(f"joueur_1.eq.{player["id"]}, joueur_2.eq.{player["id"]}, joueur_3.eq.{player["id"]}, joueur_4.eq.{player["id"]}") \
+            .execute()
+        poules_liste = response.data
 
-                if player_index_in_poule in match_a_indices :
-                    match_indices = match_a_indices
-                elif player_index_in_poule in match_b_indices :
-                    match_indices = match_b_indices
-                else:
-                    continue 
-
-                j1_name = poule_members[match_indices[0]]
-                j2_name = poule_members[match_indices[1]]
-                
-                j1_elo = joueurs[players_indexes[j1_name]]["Elo"][:-2]
-                j2_elo = joueurs[players_indexes[j2_name]]["Elo"][:-2]
-                
-                embed.add_field(
-                    name=f"{j1_name} ({j1_elo}) - {j2_name} ({j2_elo})",
-                    value=f"Ronde {self.ronde+1} du {poule_name}\nDate : {quattro["Dates"][self.ronde]}",
-                    inline=False
-                )
-                
-                embed.set_footer(text="Bot Caen Alekhine")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                match_found = True
-                return
-
-        if not match_found :
+        if len(poules_liste) == 0 :
             embed = discord.Embed(
-                    title=f"Aucun match trouvé pour vous à cette ronde.",
-                    description=f"Merci de vérifier les appariements dans <#{TDS_QUATTRO_CHANNEL_ID}>. Sinon, expliquez votre problème en mentionnant \"@Dev-bot\"",
+                    title=f"Vous n'êtes pas trouvé dans les joueurs de Quattro",
+                    description=f"Si vous participez au Quattro, merci d'expliquer votre problème dans <#{BUG_REPORT_CHANNEL_ID}> !\n Les appariements sont disponibles dans <#{TDS_QUATTRO_CHANNEL_ID}>.",
                     color=discord.Color.red()
                 )
             embed.set_footer(text="Bot Caen Alekhine")
             await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+        else :
+            poule = poules_liste[0]
 
-@tasks.loop(time=time(hour=9, minute=0, tzinfo=timezone.utc))
+        response = supabase_client.table("Matches Quattro") \
+            .select("*") \
+            .eq("id", self.ronde+1) \
+            .execute()
+        match = response.data[0]
+
+        embed = discord.Embed(
+            title=f"Votre prochain match de Quattro",
+            color=discord.Color.purple()
+        )
+
+        embed.add_field(
+            name=f"{poule[match["blancs_1"]]["nom"]} {poule[match["blancs_1"]]["prénom"]} ({poule[match["blancs_1"]]["elo_standard"]}) - {poule[match["noirs_1"]]["nom"]} {poule[match["noirs_1"]]["prénom"]} ({poule[match["noirs_1"]]["elo_standard"]})" if player["id"] in [poule[match["blancs_1"]]["id"], poule[match["noirs_1"]]["id"]] else f"{poule[match["blancs_2"]]["nom"]} {poule[match["blancs_2"]]["prénom"]} ({poule[match["blancs_2"]]["elo_standard"]}) - {poule[match["noirs_2"]]["nom"]} {poule[match["noirs_2"]]["prénom"]} ({poule[match["noirs_2"]]["elo_standard"]})",
+            value=f"Ronde {self.ronde+1} du {poule["nom"]}\nDate : **{match["date"]}**",
+            inline=False
+        )
+
+        embed.set_footer(text="Bot Caen Alekhine")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@tasks.loop(time=time(hour=9, minute=30, tzinfo=TIMEZONE))
 async def daily_data_update() :    
-    données_ffe.fetch_players()
-    données_ffe.fetch_tournaments()
-    
-    with open("joueurs.json", "r", encoding="utf-8") as fichier :
-        players = json.load(fichier)
+    players = données_ffe.fetch_players()
+    tournaments = données_ffe.fetch_tournaments()
 
     guild = bot.get_guild(GUILD_ID)
     if guild :
@@ -141,15 +148,13 @@ async def daily_data_update() :
             nick = member.nick
             if nick :
                 for player in players :
-                    if "".join(caractère for caractère in unidecode(player["NomComplet"].upper()) if caractère.isalpha()) == "".join(caractère for caractère in unidecode(nick.upper()) if caractère.isalpha()) :
-                        player["NomDiscord"] = member.name
+                    if "".join(caractère for caractère in unidecode((player["nom"] + player["prénom"]).upper()) if caractère.isalpha()) == "".join(caractère for caractère in unidecode(nick.upper()) if caractère.isalpha()) :
+                        player["discord_username"] = member.name
+                        player["discord_id"] = member.id
                         break
 
-        with open("joueurs.json", "w", encoding="utf-8") as fichier :
-            json.dump(players, fichier, ensure_ascii=False)
-    
-    with open("tournois.json", "r", encoding="utf-8") as fichier :
-        tournaments = json.load(fichier)
+    supabase_client.table("Joueurs").upsert(players).execute()
+    supabase_client.table("Tournois").upsert(tournaments).execute()
     
     channel_announcements = bot.get_channel(ANNOUNCEMENTS_CHANNEL_ID)
     channel_tds_quattro = bot.get_channel(TDS_QUATTRO_CHANNEL_ID)
@@ -164,12 +169,11 @@ async def daily_data_update() :
                     posted_tournament_names.add(field.name)
 
     for tournament in tournaments :
-        tournament_date = datetime.strptime(tournament["Date"], "%d/%m/%Y").date()
+        tournament_date = datetime.strptime(tournament["date"], "%d/%m/%Y").date()
         
-        tournament_name_to_check = tournament["NomTournoi"]
+        tournament_name_to_check = tournament["nom"]
         
-        if (abs(today - tournament_date) <= timedelta(days=30) and 
-            tournament_name_to_check not in posted_tournament_names):
+        if today - tournament_date > timedelta(0) and (abs(today - tournament_date) <= timedelta(days=30) and tournament_name_to_check not in posted_tournament_names) :
             soon_tournaments.append(tournament)
     
     if len(soon_tournaments) != 0 :
@@ -185,15 +189,17 @@ async def daily_data_update() :
             )
         for tournament in soon_tournaments :
             embed.add_field(
-                name=f"{tournament["NomTournoi"]}",
-                value=f"{tournament["Date"]} • {tournament["Ville"]}\nPlus d'infos : {tournament["LienFiche"]}",
+                name=f"{tournament["nom"]}",
+                value=f"{tournament["date"]} • {tournament["ville"]}\nPlus d'infos : {tournament["url"]}",
                 inline=False
             )
         embed.set_footer(text="Bot Caen Alekhine")
         await channel_announcements.send(embed=embed)
 
-    with open("quattro.json", "r", encoding="utf-8") as fichier :
-        quattro = json.load(fichier)
+    response = supabase_client.table("Matches Quattro") \
+        .select("*") \
+        .execute()
+    matches = response.data
     
     posted_titles = set()
 
@@ -202,14 +208,14 @@ async def daily_data_update() :
             for embed in message.embeds :
                 posted_titles.add(embed.title)
 
-    for ronde, quattro_date in enumerate(quattro["Dates"]) :
-        tournament_date = datetime.strptime(quattro_date, "%d/%m/%Y").date()
-        if (abs(today - tournament_date) <= timedelta(days=7) and 
-            f"Ronde {ronde+1} de Quattro très bientôt !" not in posted_titles) :
-            quattro_reminder_view = QuattroReminderView(ronde=ronde)
+    for match in matches :
+        tournament_date = datetime.strptime(match["date"], "%d/%m/%Y").date()
+        if today - tournament_date > timedelta(0) and (abs(today - tournament_date) <= timedelta(days=7) and 
+            f"Ronde {match["id"]} de Quattro très bientôt !" not in posted_titles) :
+            quattro_reminder_view = QuattroReminderView(ronde=match["id"])
             embed = discord.Embed(
-                title=f"Ronde {ronde+1} de Quattro très bientôt !",
-                description=quattro_date,
+                title=f"Ronde {match["id"]} de Quattro très bientôt !",
+                description=match["date"],
                 color=discord.Color.purple()
             )
             embed.add_field(
@@ -220,9 +226,11 @@ async def daily_data_update() :
             embed.set_footer(text="Bot Caen Alekhine")
             await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{QUATTRO_ROLE_ID}>")
             break
-    
-    with open("tds.json", "r", encoding="utf-8") as fichier :
-        tds = json.load(fichier)
+
+    response = supabase_client.table("Matches TDS") \
+        .select("*") \
+        .execute()
+    matches = response.data
     
     posted_titles = set()
 
@@ -231,14 +239,14 @@ async def daily_data_update() :
             for embed in message.embeds :
                 posted_titles.add(embed.title)
 
-    for ronde, tds_date in enumerate(tds["Dates"]) :
-        tournament_date = datetime.strptime(tds_date, "%d/%m/%Y").date()
-        if (abs(today - tournament_date) <= timedelta(days=7) and 
-            f"Ronde {ronde+1} de TDS très bientôt !" not in posted_titles):
-            quattro_reminder_view = QuattroReminderView(ronde=ronde)
+    for match in matches :
+        tournament_date = datetime.strptime(match["date"], "%d/%m/%Y").date()
+        if today - tournament_date > timedelta(0) and (abs(today - tournament_date) <= timedelta(days=7) and 
+            f"Ronde {match["id"]} de TDS très bientôt !" not in posted_titles):
+            quattro_reminder_view = QuattroReminderView(ronde=match["id"])
             embed = discord.Embed(
-                title=f"Ronde {ronde+1} de TDS très bientôt !",
-                description=quattro_date,
+                title=f"Ronde {match["id"]} de TDS très bientôt !",
+                description=match["date"],
                 color=discord.Color.purple()
             )
             embed.add_field(
@@ -270,7 +278,9 @@ async def on_ready() :
     global FIRST_START
     if not FIRST_START:
         return
-    
+
+    bot.add_view(QuattroReminderView())
+
     """bot.add_view(LinkModerationView())"""
     
     try :
@@ -296,36 +306,6 @@ def run_server() :
     
     app.run(host="0.0.0.0", port=port)
 
-"""@bot.event
-async def on_member_join(member: discord.Member) :
-    channel = bot.get_channel(WELCOME_CHANNEL_ID)
-
-    thread_name = f"Bienvenue, {member.display_name} !"
-    thread = await channel.create_thread(
-        name=thread_name,
-        type=discord.ChannelType.private_thread,
-        auto_archive_duration=10080
-    )
-    await thread.add_user(member)
-
-    embed = discord.Embed(
-        title=f"Bienvenue, {member.display_name} !",
-        description="Sur le serveur Discord du club d'échecs Caen Alekhine",
-        color=discord.Color.blue()
-    )
-    embed.add_field(
-        name="Ici, vous pourrez discuter avec les autres membres du club, être averti des prochains tournois,...",
-        value="\u200b",
-        inline=False
-    )
-    embed.add_field(
-        name="Pour commencer",
-        value="Vous pouvez écrire votre nom et prénom ci-dessous, pour que Maël puisse vous donner les permissions nécessaires. Après ça, vous aurez accès au reste du serveur !\nCe processus peut prendre quelques temps, merci de votre patience !\n(Si vous êtes parents d'un enfant membre du club, merci de l'indiquer.)",
-        inline=False
-    )
-    embed.set_footer(text="Bot Caen Alekhine")
-    await thread.send(embed=embed)"""
-
 @tree.command(name="ping", description="Répond avec la latence du bot")
 @app_commands.default_permissions(administrator=True)
 async def ping_command(interaction: discord.Interaction) :
@@ -335,7 +315,18 @@ async def ping_command(interaction: discord.Interaction) :
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@tree.command(name="sync", description="Synchronise et actualise les données du bot")
+@app_commands.default_permissions(administrator=True)
+async def sync_command(interaction: discord.Interaction) :
+    embed = discord.Embed(
+        title="Processus en cours",
+        color=discord.Color.green()
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+    await daily_data_update()
 
 class ClearValidationView(View) :
     def __init__(self, messages) :
@@ -397,17 +388,17 @@ async def infos_command(interaction: discord.Interaction) :
     )
     embed.add_field(
         name=f"Des commandes",
-        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez `/` dans le champ d'envoi de messages, et vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club,...",
+        value=f"Vous pouvez interagir avec le bot via des commandes. Pour cela, tapez `/` dans le champ d'envoi de messages, et vous verrez apparaître une fenêtre. En cliquant sur l'icône Bot Alekhine, vous verrez toutes les commandes disponibles :\n`/joueur`\n`/top_10`\n`/tournois`\n`/quattro`\n`/tds`\n`/chesscom`\n`/lichess`\n`/puzzle`\nCes différentes commandes vous permettent de voir les prochains tournois du Calvados, les tournois internes, les meilleurs joueurs du club, d'interagir avec Chess.com et Lichess,...",
         inline=False
     )
     embed.add_field(
         name=f"Des alertes",
-        value=f"N'ayez pas peur de manquer un tournoi ! Des alertes pour les tournois sont envoyées automatiquement, avec les informations importantes.",
+        value=f"N'ayez pas peur de manquer un tournoi ! Des alertes pour les tournois internes et du Calvados sont envoyées automatiquement, avec les informations importantes.",
         inline=False
     )
     embed.add_field(
         name=f"N'hésitez pas à nous faire part de vos suggestions !",
-        value=f"<#1450441585765650472>",
+        value=f"<#{BUG_REPORT_CHANNEL_ID}>",
         inline=False
     )
     embed.set_footer(text="Bot Caen Alekhine")
@@ -439,49 +430,54 @@ class Top10View(View) :
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
 @app_commands.default_permissions(administrator=True)
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
-    with open("joueurs.json", "r", encoding="utf-8") as fichier :
-        players = json.load(fichier)
+    response = supabase_client.table("Joueurs") \
+        .select("nom, prénom, elo_standard, classement, actif") \
+        .order("classement", desc=False) \
+        .limit(joueurs*2) \
+        .execute()
+    players = response.data
     embed = discord.Embed(
         title=f"Classement Top {joueurs} du Club",
         color=discord.Color.blue()
     )
     number_players = 0
-    df = {"Placement" : [], "NomComplet" : [], "ELO" : []}
-    for index, player in enumerate(players) :
-        if "Actif" in player and player["Actif"] == True :
+    df = {"Placement" : [], "Nom" : [], "ELO" : []}
+    for player in players :
+        nom_complet = f"{player["nom"].upper()} {player["prénom"].capitalize()}"
+        if player["actif"] == True :
             embed.add_field(
-                name=f"#{number_players+1} • {player["NomComplet"]}",
-                value=f"{player["Elo"][:-2]} Elo",
+                name=f"#{number_players+1} • {nom_complet}",
+                value=f"{player["elo_standard"][:-2]} Elo",
                 inline=False
             )
             df["Placement"].append(f"#{number_players+1}")
-            df["NomComplet"].append(f"{player["NomComplet"]}")
-            df["ELO"].append(f"{player["Elo"]}")
+            df["Nom"].append(f"{nom_complet}")
+            df["ELO"].append(f"{player["elo_standard"]}")
             number_players += 1
         if number_players == joueurs :
             break
     df = pd.DataFrame(df)
     with pd.ExcelWriter(f"Top {joueurs} club.xlsx", engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, sheet_name="Sheet1", startrow=1, startcol=1)
+        df.to_excel(writer, index=False, sheet_name=f"Top {joueurs}", startrow=1, startcol=1)
         
         workbook  = writer.book
-        worksheet = writer.sheets["Sheet1"]
+        worksheet = writer.sheets[f"Top {joueurs}"]
 
         bold_bordure = workbook.add_format({
-            'font_name': 'Arial',
-            'font_size': 14,
-            'font_color': '#3498db',
-            'bold': True,
-            'align': 'center',
-            'border': 1
+            "font_name": "Arial",
+            "font_size": 14,
+            "font_color": "#3498db",
+            "bold": True,
+            "align": "center",
+            "border": 1
         })
 
         bordure = workbook.add_format({
-            'font_name': 'Arial',
-            'font_size': 14,
-            'font_color': 'black',
-            'align': 'center',
-            'border': 1
+            "font_name": "Arial",
+            "font_size": 14,
+            "font_color": "black",
+            "align": "center",
+            "border": 1
         })
 
         worksheet.conditional_format("B2:D2", {"type": "no_errors", "format": bold_bordure})
@@ -510,77 +506,60 @@ class LinkButtonFideView(discord.ui.View) :
             url=url
         ))
 
-async def player_autocomplete(
-    interaction: discord.Interaction,
-    current: str,
-) -> list[app_commands.Choice[str]]:
-    try:
-        with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
-            players_indexes = json.load(fichier)
-        
-        return [
-            app_commands.Choice(name=player_name, value=player_name)
-            for player_name in players_indexes.keys()
-            if current.lower() in player_name.lower()
-        ][:25]
-    except Exception :
-        return []
-
 @tree.command(name="joueur", description="Affiche les infos d'un joueur du club")
-@app_commands.describe(joueur="Nom et prénom du joueur")
+@app_commands.describe(nom="Nom du joueur recherché", prénom="Prénom du joueur recherché")
 @app_commands.default_permissions(administrator=True)
-async def joueur_command(interaction: discord.Interaction, joueur: str):
-    await interaction.response.defer()
+async def joueur_command(interaction: discord.Interaction, nom: str, prénom: str):
+    await interaction.response.defer(ephemeral=True)
 
-    with open("joueurs.json", "r", encoding="utf-8") as fichier :
-        players = json.load(fichier)
-    with open("index_joueurs.json", "r", encoding="utf-8") as fichier :
-        players_indexes = json.load(fichier)
+    response = supabase_client.table("Joueurs") \
+        .select("*") \
+        .eq("nom", nom.upper()) \
+        .eq("prénom", prénom.capitalize()) \
+        .execute()
+    players = response.data
+    nom_complet = f"{nom.upper()} {prénom.capitalize()}"
 
-    if f"{" ".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}" in players_indexes :
-        player = players[players_indexes[f"{"".join(joueur.split(" ")[:-1]).upper()} {joueur.split(" ")[-1]}"]]
-    elif f"{" ".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}" in players_indexes :
-        player = players[players_indexes[f"{"".join(joueur.split(" ")[1:]).upper()} {joueur.split(" ")[0]}"]]
-    else :
-        player = données_ffe.search_player("".join(joueur.split(" ")[:-1]).upper(), joueur.split(" ")[-1])
-        if player is None :
-            player = données_ffe.search_player("".join(joueur.split(" ")[1:]).upper(), joueur.split(" ")[0])
-            if player is None :
-                embed = discord.Embed(
+    if len(players) == 0 :
+        players = données_ffe.search_player(nom_complet)
+        if len(players) == 0 :
+            embed = discord.Embed(
                     title="Joueur non trouvé",
-                    description=f"Aucun joueur enregistré sous le nom : **{joueur}**",
+                    description=f"Aucun joueur enregistré sous le nom : **{nom_complet}** ",
                     color=discord.Color.red()
                 )
-                embed.set_footer(text="Bot Caen Alekhine")
-                await interaction.followup.send(embed=embed)
-                return
+            embed.set_footer(text="Bot Caen Alekhine")
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            return                
 
-    embed = discord.Embed(
-        title="Fiche Joueur",
-        color=discord.Color.blue()
-    )
-    embed.add_field(name="Nom", value=player["NomComplet"], inline=False)
-    
-    if "NomDiscord" in player:
-        embed.add_field(name="Utilisateur Discord", value=f"@{player['NomDiscord']}", inline=False)
-    
-    embed.add_field(name="Elo Standard", value=player["Elo"], inline=True)
-    embed.add_field(name="Elo Rapide", value=player["Rapide"], inline=True)
-    embed.add_field(name="Elo Blitz", value=player["Blitz"], inline=True)
-    embed.add_field(name="Club", value=player["Club"], inline=False)
-    embed.add_field(name="N° FFE", value=player["NrFFE"], inline=True)
-    
-    embed.set_footer(text="Bot Caen Alekhine")
+    for player in players :
+        embed = discord.Embed(
+            title="Fiche Joueur",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Nom", value=nom_complet, inline=False)
+        
+        if "discord_username" in player:
+            embed.add_field(name="Utilisateur Discord", value=f"@{player["discord_username"]}", inline=False)
+        
+        embed.add_field(name="Elo Standard", value=player["elo_standard"], inline=True)
+        embed.add_field(name="Elo Rapide", value=player["elo_rapide"], inline=True)
+        embed.add_field(name="Elo Blitz", value=player["elo_blitz"], inline=True)
+        embed.add_field(name="Club", value=player["club"], inline=False)
+        embed.add_field(name="N° FFE", value=player["id"], inline=True)
+        contacts = ""
+        if player["contact"] :
+            for contact in player["contact"] :
+                contacts += f"{contact}\n"
+            embed.add_field(name="Contact", value=contacts, inline=False)
+        
+        embed.set_footer(text="Bot Caen Alekhine")
 
-    if player.get("FicheFIDE"):
-        view = LinkButtonFideView(url=player["FicheFIDE"])
-        await interaction.followup.send(embed=embed, view=view)
-    else:
-        await interaction.followup.send(embed=embed)
-
-@joueur_command.autocomplete("joueur")
-async def joueur_auto(interaction: discord.Interaction, current: str) :
-    return await player_autocomplete(interaction, current)
+        if player["url_fide"] :
+            view = LinkButtonFideView(url=player["url_fide"])
+            await interaction.followup.send(embed=embed, view=view)
+        else:
+            await interaction.followup.send(embed=embed)
 
 class LinkButtonFFETournamentsView(discord.ui.View) :
     def __init__(self, url) :
@@ -596,14 +575,17 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 @app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
 @app_commands.default_permissions(administrator=True)
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
-    nom_département = DEPARTEMENTS[département]["Nom"]
     phrase_département = DEPARTEMENTS[département]["Phrase"]
     if département == "14" :
-        with open("tournois.json", "r", encoding="utf-8") as fichier :
-            tournaments = json.load(fichier)[:25]
+        response = supabase_client.table("Tournois") \
+            .select("*") \
+            .limit(25) \
+            .execute()
+        tournaments = response.data
+        tournaments.reverse()
     else :
         tournaments = données_ffe.get_tournaments(département)
-
+        tournaments.reverse()
     if len(tournaments) == 1 :
         embed = discord.Embed(
             title=f"Prochain tournoi {phrase_département}",
@@ -622,8 +604,8 @@ async def tournois_command(interaction: discord.Interaction, département : str 
             )
     for index, tournament in enumerate(tournaments) :
         embed.add_field(
-            name=f"{tournament["NomTournoi"]}",
-            value=f"{tournament["Date"]} • {tournament["Ville"]}\nPlus d'infos : {tournament["LienFiche"]}",
+            name=f"{tournament["nom"]}",
+            value=f"{tournament["date"]} • {tournament["ville"]}\nPlus d'infos : {tournament["url"]}",
             inline=False
         )
 
@@ -631,7 +613,7 @@ async def tournois_command(interaction: discord.Interaction, département : str 
     link_button_ffe_tournaments_view = LinkButtonFFETournamentsView(url=f"https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef={département}")
     await interaction.response.send_message(embed=embed, view=link_button_ffe_tournaments_view, ephemeral=False)
 
-@tournois_command.autocomplete('département')
+@tournois_command.autocomplete("département")
 async def dept_autocomplete(
     interaction: discord.Interaction,
     current: str,
@@ -648,12 +630,14 @@ class DropdownMenuQuattro(View) :
         self.add_item(self.create_dropdown())
         
     def create_dropdown(self) :
-        with open("quattro.json", "r", encoding="utf-8") as fichier :
-            données = json.load(fichier)
-        pairings = données["Appariements"]
+        response = supabase_client.table("Poules_Quattro") \
+            .select("id, nom") \
+            .order("id", desc=False) \
+            .execute()
+        poules = response.data
         options = []
-        for quattro in pairings :
-            options.append(discord.SelectOption(label=quattro))
+        for poule in poules :
+            options.append(discord.SelectOption(label=poule["nom"]))
             
         dropdown_menu = Select(
             placeholder = "Sélectionnez une poule de Quattro",
@@ -665,28 +649,32 @@ class DropdownMenuQuattro(View) :
         return dropdown_menu
     
     async def callback_quattro(self, interaction : discord.Interaction) :
-        with open("quattro.json", "r", encoding="utf-8") as fichier :
-            données = json.load(fichier)
-        pairings = données["Appariements"]
-        matches = données["Matches"]
-        dates = données["Dates"]
-        poule = interaction.data["values"][0]
+        await interaction.response.defer(ephemeral=True)
 
-        await interaction.response.defer()
+        response = supabase_client.table("Poules_Quattro") \
+            .select("id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom)") \
+            .eq("nom", "Quattro du Cavalier") \
+            .execute()
+        poule = response.data[0]
+        
+        response = supabase_client.table("Matches Quattro") \
+            .select("*") \
+            .execute()
+        matches = response.data
 
         embed = discord.Embed(
-            title=f"Appariements {poule}",
+            title=f"Appariements du {poule["nom"]}",
             color=discord.Color.purple()
         )
         embed.add_field(
             name=f"Joueurs",
-            value=f"{pairings[poule][0]} • {pairings[poule][1]} • {pairings[poule][2]} • {pairings[poule][3]}",
+            value=f"{poule["joueur_1"]["nom"]} {poule["joueur_1"]["prénom"]} • {poule["joueur_2"]["nom"]} {poule["joueur_2"]["prénom"]} • {poule["joueur_3"]["nom"]} {poule["joueur_3"]["prénom"]} • {poule["joueur_4"]["nom"]} {poule["joueur_4"]["prénom"]}",
             inline=False
         )
-        for i in range(6) :
+        for match in matches :
             embed.add_field(
-                name=f"Ronde {i+1} • {dates[i]}",
-                value=f"{pairings[poule][matches[i][0]]} - {pairings[poule][matches[i][1]]}\n{pairings[poule][matches[i][2]]} - {pairings[poule][matches[i][3]]}",
+                name=f"Ronde {match["id"]} • {match["date"]}",
+                value=f"{poule[match["blancs_1"]]["nom"]} {poule[match["blancs_1"]]["prénom"]} - {poule[match["noirs_1"]]["nom"]} {poule[match["noirs_1"]]["prénom"]}\n{poule[match["blancs_2"]]["nom"]} {poule[match["blancs_2"]]["prénom"]} - {poule[match["noirs_2"]]["nom"]} {poule[match["noirs_2"]]["prénom"]}",
                 inline=False
             )
         
@@ -703,24 +691,31 @@ async def quattro_command(interaction: discord.Interaction) :
 @tree.command(name="tds", description="Affiche les appariements du TDS")
 @app_commands.default_permissions(administrator=True)
 async def tds_command(interaction: discord.Interaction) :
-    with open("tds.json", "r", encoding="utf-8") as fichier :
-        tds = json.load(fichier)
-    
+    response = supabase_client.table("Joueurs_TDS") \
+            .select("id, joueur:Joueurs!Joueurs_TDS_joueur_fkey(id, nom, prénom)") \
+            .execute()
+    joueurs = response.data
+
+    response = supabase_client.table("Matches TDS") \
+        .select("*") \
+        .execute()
+    matches = response.data
+
     embed = discord.Embed(
             title=f"Joueurs TDS",
             color=discord.Color.purple()
         )
-    joueurs = ""
-    for index, joueur in enumerate(tds["Joueurs"]) :
-        joueurs += f"{joueur}\n"
+    liste_joueurs = ""
+    for joueur in joueurs :
+        liste_joueurs += f"{joueur["joueur"]["nom"]} {joueur["joueur"]["prénom"]}\n"
     embed.add_field(
         name = "Joueurs",
-        value = joueurs,
+        value = liste_joueurs,
         inline=False
     )
     dates = ""
-    for index, date in enumerate(tds["Dates"]) :
-        dates += f"Ronde {index+1} • {date}\n"
+    for match in matches :
+        dates += f"Ronde {match["id"]} • {match["date"]}\n"
     embed.add_field(
         name = "Dates",
         value = dates,
@@ -735,92 +730,202 @@ async def tds_command(interaction: discord.Interaction) :
     embed.set_footer(text="Bot Caen Alekhine")
     await interaction.response.send_message(embed=embed)
 
-"""class LinkModerationView(discord.ui.View) :
-    def __init__(self) :
+@tree.command(name="puzzle", description="Affiche le problème du jour de Chess.com")
+@app_commands.default_permissions(administrator=True)
+async def puzzle_command(interaction: discord.Interaction) :
+    await interaction.response.defer(ephemeral=True)
+    headers = {"User-Agent": "Bot Alekhine"}
+    response = requests.get("https://api.chess.com/pub/puzzle", headers=headers)
+    if response.status_code == 200 :
+        data = response.json()
+        image = data.get("image")
+        title = data.get("title")
+        pgn_text = data.get("pgn")
+
+        move_section = pgn_text.split("\r\n\r\n")[-1]
+        solution = move_section.replace("*", "").replace("1.", "").strip()
+        solution = solution.replace("K", "R").replace("Q", "D").replace("N", "C").replace("B", "F").replace("R", "T")
+
+        embed = discord.Embed(
+            title=f"Problème du jour",
+            description=f"\"{title}\"",
+            color=discord.Color.pink()
+        )
+        embed.add_field(
+            name = f"Solution : ||{solution}||",
+            value = "Source : Chess.com",
+            inline=False
+        )
+        embed.set_image(url=image)
+        embed.set_footer(text="Bot Caen Alekhine")
+        await interaction.followup.send(embed=embed, ephemeral=False)
+
+class LinkButtonOnlineProfileView(discord.ui.View) :
+    def __init__(self, url, plateforme) :
         super().__init__(timeout=None)
-
-    @discord.ui.button(label="Accepter le lien", style=discord.ButtonStyle.success, custom_id="link_accept")
-    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button) :
-        parts = interaction.message.content.split('\n', 2)
-        author_mention = parts[0].replace("Soumission de ", "")
-        link = parts[1].replace("Lien : ", "")
-        description = parts[2].replace("Description : ", "") if len(parts) > 2 else ""
-
-        public_channel = interaction.guild.get_channel(RESSOURCES_CHANNEL_ID)
         
-        embed = discord.Embed(description=description, color=discord.Color.blue())
-        embed.set_author(name=f"Partagé par {interaction.user.display_name}")
-        embed.add_field(name="Lien", value=link)
-        
-        await public_channel.send(embed=embed)
+        self.add_item(discord.ui.Button(
+            label=f"Profil {plateforme}",
+            style=discord.ButtonStyle.link,
+            url=url
+        ))
 
-        await interaction.response.edit_message(content=f"Accepté par {interaction.user.mention}", view=None, delete_after=30)
+@tree.command(name="chesscom", description="Affichez les infos d'un compte Chess.com")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(utilisateur="Nom d'utilisateur recherché")
+async def chesscom_command(interaction: discord.Interaction, utilisateur:str) :
+    await interaction.response.defer(ephemeral=True)
 
-    @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, custom_id="link_reject")
-    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button) :
-        await interaction.response.edit_message(content=f"Refusé par {interaction.user.mention}", view=None, delete_after=30)
+    url = f"{CHESS_COM_BASE_URL}/player/{utilisateur}"
+    response = requests.get(url, headers=CHESS_COM_HEADERS)
+    infos = response.json()
 
-class LinkSubmitModal(discord.ui.Modal, title='Vérification du lien') :
-    def __init__(self, default_text, link) :
-        super().__init__()
-        self.link = link
-        self.link_input = discord.ui.TextInput(
-            label='Lien détecté', 
-            default=self.link, 
-            style=discord.TextStyle.short
+    url = f"{CHESS_COM_BASE_URL}/player/{utilisateur}/stats"
+    response = requests.get(url, headers=CHESS_COM_HEADERS)
+    stats = response.json()
+
+    description = f":flag_{infos["country"][-2:].lower()}: {infos["name"]}"
+    if "title" in infos :
+        description += f" - **{infos["title"]}**"
+
+    embed = discord.Embed(
+        title=utilisateur,
+        description = description,
+        color=discord.Color.pink()
+    )
+    embed.add_field(
+        name="Rapide",
+        value=f"{stats["chess_rapid"]["last"]["rating"]} Elo\nRecord : {stats["chess_rapid"]["best"]["rating"]}",
+        inline=True
+    )
+    embed.add_field(
+        name="Blitz",
+        value=f"{stats["chess_blitz"]["last"]["rating"]} Elo\nRecord : {stats["chess_blitz"]["best"]["rating"]}",
+        inline=True
+    )
+    embed.add_field(
+        name="Bullet",
+        value=f"{stats["chess_bullet"]["last"]["rating"]} Elo\nRecord : {stats["chess_bullet"]["best"]["rating"]}",
+        inline=True
+    )
+    embed.add_field(
+        name="Différé",
+        value=f"{stats["chess_daily"]["last"]["rating"]} Elo\nRecord : {stats["chess_daily"]["best"]["rating"]}",
+        inline=True
+    )
+    embed.add_field(
+        name="Problèmes",
+        value=f"Record : {stats["tactics"]["highest"]["rating"]} Elo",
+        inline=True
+    )
+    if infos["is_streamer"] == True :
+        streams = "Streame sur "
+        urls = ""
+        for streaming_platform in infos["streaming_platforms"] :
+            streams += f"{streaming_platform["type"].capitalize()}, "
+            urls += f"{streaming_platform["channel_url"]}\n"
+        streams = streams[:-2]
+        embed.add_field(
+            name=streams,
+            value=urls,
+            inline=False
         )
-        self.desc_input = discord.ui.TextInput(
-            label='Description / Message', 
-            default=default_text, 
-            style=discord.TextStyle.paragraph,
-            required=False
+    if infos["league"] :
+        embed.add_field(
+            name="Ligue",
+            value=infos["league"],
+            inline=False
         )
-        self.add_item(self.link_input)
-        self.add_item(self.desc_input)
 
-    async def on_submit(self, interaction: discord.Interaction) :
-        mod_channel = interaction.guild.get_channel(LOGS_CHANNEL_ID)
-        content = f"Soumission de {interaction.user.mention}\nLien : {self.link_input.value}\nDescription : {self.desc_input.value}"
-        await mod_channel.send(content=content, view=LinkModerationView())
-        await interaction.response.send_message("Lien envoyé en modération, il sera vérifié dès que possible.", ephemeral=True)"""
+    if "avatar" in infos :
+        embed.set_thumbnail(url=infos["avatar"])
+    else :
+        embed.set_thumbnail(url="https://www.chess.com/bundles/web/images/user-image.007dad08.svg")
+    embed.set_footer(text="Bot Caen Alekhine")
+    chesscom_view = LinkButtonOnlineProfileView(infos["url"], "Chess.com")
+    await interaction.followup.send(embed=embed, view=chesscom_view, ephemeral=False)
 
-"""@bot.event
-async def on_message(message) :
-    if message.author == bot.user :
-        return
+@tree.command(name="lichess", description="Affichez les infos d'un compte Lichess")
+@app_commands.default_permissions(administrator=True)
+@app_commands.describe(utilisateur="Nom d'utilisateur recherché")
+async def lichess_command(interaction: discord.Interaction, utilisateur:str) :
+    await interaction.response.defer(ephemeral=True)
 
-    if message.channel.id == ANNOUNCEMENTS_CHANNEL_ID :
-        urls = re.findall(r'(https?://[^\s]+)', message.content)
-        
-        if urls :
-            found_link = urls[0]
-            remaining_text = message.content.replace(found_link, "").strip()
-            
-            await message.delete()
-            
-            view = View()
-            btn = discord.ui.Button(label="Valider ma publication", style=discord.ButtonStyle.primary)
-            
-            async def btn_callback(interaction):
-                await interaction.response.send_modal(LinkSubmitModal(remaining_text, found_link))
-            
-            btn.callback = btn_callback
-            view.add_item(btn)
-            
-            await message.channel.send(
-                f"{message.author.mention}, votre message contient un lien et doit être vérifié.", view=view, delete_after=30
-            )
-            return
+    url = f"{LICHESS_BASE_URL}/user/{utilisateur}"
+    response = requests.get(url, headers=LICHESS_HEADERS)
+    infos = response.json()
 
-    await bot.process_commands(message)"""
+    if "profile" in infos :
+        description = ""
+        if "flag" in infos["profile"] :
+            description += f":flag_{infos["profile"]["flag"].lower()}: "
+        if "realName" in infos["profile"] :
+            description += f"{infos["profile"]["realName"]} "
+        if "title" in infos :
+            description += f"- **{infos["title"]}**" if len(description) > 0 else f"**{infos["title"]}**"
+
+    embed = discord.Embed(
+        title=utilisateur,
+        description = description,
+        color=discord.Color.pink()
+    )
+    embed.add_field(
+        name="Rapide",
+        value=f"{infos["perfs"]["rapid"]["rating"]} Elo",
+        inline=True
+    )
+    embed.add_field(
+        name="Blitz",
+        value=f"{infos["perfs"]["blitz"]["rating"]} Elo",
+        inline=True
+    )
+    embed.add_field(
+        name="Bullet",
+        value=f"{infos["perfs"]["bullet"]["rating"]} Elo",
+        inline=True
+    )
+    embed.add_field(
+        name="Classique",
+        value=f"{infos["perfs"]["classical"]["rating"]} Elo",
+        inline=True
+    )
+    embed.add_field(
+        name="Correspondance",
+        value=f"{infos["perfs"]["correspondence"]["rating"]} Elo",
+        inline=True
+    )
+    embed.add_field(
+        name="Problèmes",
+        value=f"{infos["perfs"]["puzzle"]["rating"]} Elo",
+        inline=True
+    )
+
+    embed.set_footer(text="Bot Caen Alekhine")
+    lichess_view = LinkButtonOnlineProfileView(infos["url"], "Lichess")
+    await interaction.followup.send(embed=embed, view=lichess_view, ephemeral=False)
+
+@bot.event
+async def on_app_command_completion(interaction: discord.Interaction, command: app_commands.Command):
+    log_channel = bot.get_channel(LOGS_CHANNEL_ID)  
+    timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
+
+    message = f"[{timestamp}] @{interaction.user.name} - **/{interaction.command.name}**"
+
+    if "options" in interaction.data :
+        message += " ("
+        for option in interaction.data["options"] :
+            message += f"{option['name']} : {option['value']} - "
+        message = f"{message[:-3]})"
+
+    await log_channel.send(message)
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
     if isinstance(error, app_commands.MissingAnyRole) :
         required_roles = [role for role in error.missing_roles]
         embed = discord.Embed(
-            title="Accès refusé",
-            description=f"Vous n'avez pas les permissions nécessaires. Vous devez posséder l'un des rôles suivants : {"".join(f"{role}, " for role in required_roles)[:-2]}",
+            title="Utilisation de la commande refusée",
+            description=f"Vous n'avez pas les permissions nécessaires. Vous devez posséder l'un des rôles suivants : {"".join(f"{role}, " for role in required_roles)[:-2]}\nSi vous êtes censé y avoir accès, merci d'expliquer votre problème dans <@&{DEV_BOT_ROLE_ID}> !",
             color=discord.Color.red(),
         )
         embed.set_footer(text="Bot Caen Alekhine")
@@ -832,7 +937,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
     else :
         embed = discord.Embed(
             title="Une erreur est survenue",
-            description=f"Merci de bien vouloir réessayer plus tard, nous travaillons à la résolution du problème.",
+            description=f"Merci de bien vouloir réessayer plus tard, nous travaillons à la résolution du problème.\nVous pouvez donner des détails sur le problème dans <#{BUG_REPORT_CHANNEL_ID}> !",
             color=discord.Color.red(),
         )
         embed.set_footer(text="Bot Caen Alekhine")
@@ -842,7 +947,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             await interaction.response.send_message(embed=embed, ephemeral=True)
         embed = discord.Embed(
             title="Une erreur est survenue ",
-            description=f"Erreur :\n{error}",
+            description=f"**Erreur :**\n{error}",
             color=discord.Color.red(),
         )
         channel = bot.get_channel(LOGS_CHANNEL_ID)

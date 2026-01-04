@@ -1,83 +1,88 @@
+#   »»» Bot Alekhine «««
+#   Bot Discord du club d'échecs Caen Alekhine
+#   données_ffe.py
+
 import requests
 from bs4 import BeautifulSoup
 from operator import itemgetter
-import json
 import datetime
 from datetime import date
 import re
 from unidecode import unidecode
 from dateutil.relativedelta import relativedelta
 
-URL_CLUB = 'https://www.echecs.asso.fr/ListeJoueurs.aspx?Action=JOUEURCLUBREF&ClubRef=184'
+URL_CLUB = "https://www.echecs.asso.fr/ListeJoueurs.aspx?Action=JOUEURCLUBREF&ClubRef=184"
 PAYLOAD_CONSTANTES = {
-    '__EVENTTARGET': 'ctl00$ContentPlaceHolderMain$PagerFooter', 
-    '__VIEWSTATEGENERATOR': '37C7F7E6',
+    "__EVENTTARGET": "ctl00$ContentPlaceHolderMain$PagerFooter", 
+    "__VIEWSTATEGENERATOR": "37C7F7E6",
 }
 
 URL_FFE = "https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef=14"
 BASE_URL = "https://www.echecs.asso.fr/"
 ABBR_MONTH_MAP = {
-    'janv': 1, 'févr': 2, 'mars': 3, 'avr': 4,
-    'mai': 5, 'juin': 6, 'juil': 7, 'août': 8,
-    'sept': 9, 'oct': 10, 'nov': 11, 'déc': 12
+    "janv": 1, "févr": 2, "mars": 3, "avr": 4,
+    "mai": 5, "juin": 6, "juil": 7, "août": 8,
+    "sept": 9, "oct": 10, "nov": 11, "déc": 12
 }
 
+
 def fetch_data(soup) :
-    lignes_joueurs = soup.find_all('tr', class_=['liste_clair', 'liste_fonce'])
+    lignes_joueurs = soup.find_all("tr", class_=["liste_clair", "liste_fonce"])
     donnees_joueurs = []
 
     titres_colonnes = [
-        "NrFFE", "NomComplet", "Af.", "Info",
-        "Elo", "Rapide", "Blitz", "Cat", "M.", "Club"
+        "id", "nom_complet", "license", "info",
+        "elo_standard", "elo_rapide", "elo_blitz", "catégorie", "m.", "club"
     ]
 
     for ligne in lignes_joueurs :
-        cellules = ligne.find_all('td', recursive=False)
+        cellules = ligne.find_all("td", recursive=False)
         if len(cellules) >= len(titres_colonnes) :
             joueur_data = {}
             for i, titre in enumerate(titres_colonnes) :
-                texte_cellule = cellules[i].get_text(strip=True).replace('\xa0', ' ')
+                texte_cellule = cellules[i].get_text(strip=True).replace("\xa0", " ")
                 joueur_data[titre] = texte_cellule
-            joueur_data["Nom"] = "".join(joueur_data["NomComplet"].split(' ')[:-1])
-            joueur_data["Prénom"] = joueur_data["NomComplet"].split(' ')[-1]
+            joueur_data["nom"] = "".join(joueur_data["nom_complet"].split(" ")[:-1])
+            joueur_data["prénom"] = joueur_data["nom_complet"].split(" ")[-1]
             donnees_joueurs.append(joueur_data)
 
-            lien = f"https://www.echecs.asso.fr/{ligne.find_all('a', class_='lien_texte')[-1].get('href')}"
+            lien = f"https://www.echecs.asso.fr/{ligne.find_all("a", class_="lien_texte")[-1].get("href")}"
+            joueur_data["url_ffe"] = lien
             reponse_fiche = requests.get(lien)
             reponse_fiche.raise_for_status()
-            soup_fiche = BeautifulSoup(reponse_fiche.text, 'html.parser')
-            lien_fide = soup_fiche.find('a', class_="lien_texte").get('href')
-            joueur_data["FicheFIDE"] = lien_fide
+            soup_fiche = BeautifulSoup(reponse_fiche.text, "html.parser")
+            lien_fide = soup_fiche.find("a", class_="lien_texte").get("href")
+            joueur_data["url_fide"] = lien_fide
 
+            joueur_data["actif"] = False
             if lien_fide :
-                joueur_data["Actif"] = False
                 reponse_fide = requests.get(f"{lien_fide}/calculations")
                 reponse_fide.raise_for_status()
-                soup_fide = BeautifulSoup(reponse_fide.text, 'html.parser')
+                soup_fide = BeautifulSoup(reponse_fide.text, "html.parser")
                 six_months_ago_start = (date.today() - relativedelta(months=3)).replace(day=1)
                 month_map = {
-                    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 
-                    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+                    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6, 
+                    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
                 }
-                rating_table = soup_fide.find('table', class_='profile-table_calc')
+                rating_table = soup_fide.find("table", class_="profile-table_calc")
                 if not rating_table :
                     return donnees_joueurs
                 
-                rows = rating_table.find_all('tr')[1:] 
+                rows = rating_table.find_all("tr")[1:] 
                 for row in rows:
-                    cols = row.find_all('td')
+                    cols = row.find_all("td")
                     if len(cols) < 7:
                         continue
-                    period_str = cols[0].text.strip().replace('\xa0', '')
+                    period_str = cols[0].text.strip().replace("\xa0", "")
                     
-                    std_gms = int(cols[2].text.strip().replace('\xa0', '') or 0)
-                    rpd_gms = int(cols[4].text.strip().replace('\xa0', '') or 0)
-                    blz_gms = int(cols[6].text.strip().replace('\xa0', '') or 0)
+                    std_gms = int(cols[2].text.strip().replace("\xa0", "") or 0)
+                    rpd_gms = int(cols[4].text.strip().replace("\xa0", "") or 0)
+                    blz_gms = int(cols[6].text.strip().replace("\xa0", "") or 0)
                     
                     total_games_played = std_gms + rpd_gms + blz_gms
 
                     if total_games_played > 0:
-                        year, month_abbr = period_str.split('-')
+                        year, month_abbr = period_str.split("-")
                         month_num = month_map.get(month_abbr[:3])
                         
                         if month_num is None:
@@ -86,7 +91,7 @@ def fetch_data(soup) :
                         period_date = date(int(year), month_num, 1)
 
                         if period_date >= six_months_ago_start:
-                            joueur_data["Actif"] = True
+                            joueur_data["actif"] = True
             
     return donnees_joueurs
 
@@ -95,20 +100,20 @@ def get_players(url) :
     all_players_data = []
     with requests.Session() as session :
         response = session.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, "html.parser")
         
-        viewstate = soup.find('input', {'__VIEWSTATE'})
-        viewstategenerator = soup.find('input', {'__VIEWSTATEGENERATOR'})
-        eventvalidation = soup.find('input', {'__EVENTVALIDATION'})
+        viewstate = soup.find("input", {"__VIEWSTATE"})
+        viewstategenerator = soup.find("input", {"__VIEWSTATEGENERATOR"})
+        eventvalidation = soup.find("input", {"__EVENTVALIDATION"})
         
         current_payload = {
-            '__VIEWSTATE' : viewstate['value'] if viewstate else '',
-            '__VIEWSTATEGENERATOR' : viewstategenerator['value'] if viewstategenerator else PAYLOAD_CONSTANTES['__VIEWSTATEGENERATOR'],
-            '__EVENTTARGET' : PAYLOAD_CONSTANTES['__EVENTTARGET'],
+            "__VIEWSTATE" : viewstate["value"] if viewstate else "",
+            "__VIEWSTATEGENERATOR" : viewstategenerator["value"] if viewstategenerator else PAYLOAD_CONSTANTES["__VIEWSTATEGENERATOR"],
+            "__EVENTTARGET" : PAYLOAD_CONSTANTES["__EVENTTARGET"],
         }
         
         if eventvalidation :
-            current_payload['__EVENTVALIDATION'] = eventvalidation['value']
+            current_payload["__EVENTVALIDATION"] = eventvalidation["value"]
 
         donnees_page_1 = fetch_data(soup)
         all_players_data.extend(donnees_page_1)
@@ -117,20 +122,20 @@ def get_players(url) :
         
         while True :
             post_data = current_payload.copy()
-            post_data['__EVENTARGUMENT'] = str(page_num) 
+            post_data["__EVENTARGUMENT"] = str(page_num) 
 
             response = session.post(url, data=post_data)
             response.raise_for_status()
 
-            soup = BeautifulSoup(response.text, 'html.parser')
+            soup = BeautifulSoup(response.text, "html.parser")
             nouvelles_donnees = fetch_data(soup)
 
             if nouvelles_donnees :
                 all_players_data.extend(nouvelles_donnees)
 
-                viewstate = soup.find('input', {'__VIEWSTATE'})
+                viewstate = soup.find("input", {"__VIEWSTATE"})
                 if viewstate :
-                    current_payload['__VIEWSTATE'] = viewstate['value']
+                    current_payload["__VIEWSTATE"] = viewstate["value"]
 
                 page_num += 1
             else :
@@ -138,44 +143,44 @@ def get_players(url) :
                 
     return all_players_data
 
-def get_tournaments(département):
+def get_tournaments(département) :
     URL_FFE = f"https://www.echecs.asso.fr/ListeTournois.aspx?Action=TOURNOICOMITE&ComiteRef={département}"
     response = requests.get(URL_FFE)
     response.raise_for_status()
-    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(response.content, "html.parser")
 
     tournois_futurs = []
     today = datetime.date.today()
     current_year = None
     
-    main_table = soup.find('table', attrs={'border': '0', 'cellspacing': '0', 'cellpadding': '4', 'width': '100%'})
-    if not main_table:
+    main_table = soup.find("table", attrs={"border": "0", "cellspacing": "0", "cellpadding": "4", "width": "100%"})
+    if not main_table :
         return []
 
-    for row in main_table.find_all('tr', recursive=False):
-        if 'RowRupture' in row.get('id', ''):
-            rupture_td = row.find('td', class_='liste_titre')
+    for row in main_table.find_all("tr", recursive=False):
+        if "RowRupture" in row.get("id", ""):
+            rupture_td = row.find("td", class_="liste_titre")
             if rupture_td:
-                match = re.search(r'\d{4}', rupture_td.text)
+                match = re.search(r"\d{4}", rupture_td.text)
                 if match:
                     current_year = int(match.group(0))
             continue
             
-        if row.get('class') and (row.get('class')[0] == 'liste_fonce' or row.get('class')[0] == 'liste_clair'):
+        if row.get("class") and (row.get("class")[0] == "liste_fonce" or row.get("class")[0] == "liste_clair") :
             
-            if current_year is None:
+            if current_year is None :
                 continue
 
-            tds = row.find_all('td')
-            if len(tds) >= 5:
+            tds = row.find_all("td")
+            if len(tds) >= 5 :
                 raw_date_str = tds[4].text.strip()
 
                 try:
-                    date_parts = raw_date_str.strip('.').split()
+                    date_parts = raw_date_str.strip(".").split()
                     
                     if len(date_parts) == 2:
                         day_str, month_abbr = date_parts
-                        month_abbr_cleaned = month_abbr.lower().replace('.', '')
+                        month_abbr_cleaned = month_abbr.lower().replace(".", "")
 
                         if month_abbr_cleaned in ABBR_MONTH_MAP:
                             month = ABBR_MONTH_MAP[month_abbr_cleaned]
@@ -187,14 +192,14 @@ def get_tournaments(département):
                                 ville = tds[1].text.strip()
                                 departement = tds[2].text.strip()
                                 
-                                element_tournoi = tds[3].find('a')
+                                element_tournoi = tds[3].find("a")
                                 nom = element_tournoi.text.strip() if element_tournoi else "Nom non trouvé"
-                                lien = BASE_URL + element_tournoi['href'] if element_tournoi and 'href' in element_tournoi.attrs else ""
+                                lien = BASE_URL + element_tournoi["href"] if element_tournoi and "href" in element_tournoi.attrs else ""
                                 
                                 tournois_futurs.append({
-                                    "Reference": ref, "Ville": ville, "Département": departement,
-                                    "NomTournoi": nom, "Date": tournament_date.strftime("%d/%m/%Y"),
-                                    "LienFiche": lien
+                                    "id": ref, "ville": ville, "département": departement,
+                                    "nom": nom, "date": tournament_date.strftime("%d/%m/%Y"),
+                                    "url": lien
                                 })
 
                 except ValueError:
@@ -206,21 +211,24 @@ def fetch_players() :
     players = get_players(URL_CLUB)
     players_sorted = sorted(
         players,
-        key = itemgetter("Elo"),
+        key = itemgetter("elo_standard"),
         reverse = True
     )
-    players_indexes = {}
+    players_data = []
     for index, player in enumerate(players_sorted) :
-        players_indexes[player["NomComplet"]] = index
-    with open("joueurs.json", 'w', encoding='utf-8') as file :
-        json.dump(players_sorted, file, indent=4, ensure_ascii=False)
-    with open("index_joueurs.json", 'w', encoding='utf-8') as file :
-        json.dump(players_indexes, file, indent=4, ensure_ascii=False)
+        user_data = {"id":player["id"], "classement":index+1, "nom":player["nom"], "prénom":player["prénom"], "elo_standard":player["elo_standard"], "elo_rapide":player["elo_rapide"], "elo_blitz":player["elo_blitz"], "url_ffe":player["url_ffe"], "url_fide":player["url_fide"], "actif":player["actif"], "club":player["club"]}
+        players_data.append(user_data)
+
+    return players_data
 
 def fetch_tournaments() :
     tournaments = get_tournaments(14)
-    with open("tournois.json", 'w', encoding='utf-8') as file :
-        json.dump(tournaments, file, indent=4, ensure_ascii=False)
+    tournaments_data = []
+    for index, tournament in enumerate(tournaments) :
+        tournament_data = {"id":tournament["id"], "nom":tournament["nom"], "date":tournament["date"], "ville":tournament["ville"], "url":tournament["url"],}
+        tournaments_data.append(tournament_data)
+
+    return tournaments_data
 
 def search_player(nom, prénom) :
     url = "https://www.echecs.asso.fr/ListeJoueurs.aspx?Action=FFE"
@@ -233,9 +241,11 @@ def search_player(nom, prénom) :
     response = requests.post(url, data=payload)
     response.raise_for_status()
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, "html.parser")
     donees_joueurs = fetch_data(soup)
     
+    joueurs = []
     for joueur in donees_joueurs :
-        if ''.join(caractère for caractère in unidecode(joueur["Prénom"].upper()) if caractère.isalpha()) == prénom.upper() :
-            return joueur
+        if "".join(caractère for caractère in unidecode(joueur["prénom"].upper()) if caractère.isalpha()) == prénom.upper() :
+            joueurs.append(joueur)
+    return joueurs
