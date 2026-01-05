@@ -310,6 +310,7 @@ def run_server() :
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def ping_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Pong !",
@@ -321,6 +322,7 @@ async def ping_command(interaction: discord.Interaction) :
 
 @tree.command(name="sync", description="Synchronise et actualise les données du bot")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def sync_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Processus en cours",
@@ -365,6 +367,7 @@ class ClearValidationView(View) :
 @tree.command(name="clear", description="Supprime les derniers messages")
 @app_commands.describe(messages="Nombre de messages à supprimer (Laisser vide pour vider le salon)")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def clear_command(interaction: discord.Interaction, messages: app_commands.Range[int, 1, 1000] = None) :    
     await interaction.response.defer(ephemeral=True)
 
@@ -378,6 +381,7 @@ async def clear_command(interaction: discord.Interaction, messages: app_commands
 
 @tree.command(name="infos", description="Affiche tout ce que vous pouvez faire avec ce bot !")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def infos_command(interaction: discord.Interaction) :
     embed = discord.Embed(
         title="Informations Bot Alekhine",
@@ -431,6 +435,7 @@ class Top10View(View) :
 @tree.command(name="top_10", description="Affiche le top 10 du club")
 @app_commands.describe(joueurs="Nombre de joueurs à afficher (Laisser vide pour le top 10)")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
     response = supabase_client.table("Joueurs") \
         .select("nom, prénom, elo_standard, classement, actif") \
@@ -511,6 +516,7 @@ class LinkButtonFideView(discord.ui.View) :
 @tree.command(name="joueur", description="Affiche les infos d'un joueur du club")
 @app_commands.describe(nom="Nom du joueur recherché", prénom="Prénom du joueur recherché")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def joueur_command(interaction: discord.Interaction, nom: str, prénom: str):
     await interaction.response.defer(ephemeral=True)
 
@@ -579,6 +585,7 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 @tree.command(name="tournois", description="Affiche les prochains tournois")
 @app_commands.describe(département="Département des tournois à rechercher (Laisser vide pour le Calvados)")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
     phrase_département = DEPARTEMENTS[département]["Phrase"]
     if département == "14" :
@@ -690,11 +697,13 @@ class DropdownMenuQuattro(View) :
 
 @tree.command(name="quattro", description="Affiche les appariements du Quattro")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def quattro_command(interaction: discord.Interaction) :
     await interaction.response.send_message("Vous pouvez sélectionner la poule de Quattro qui vous intéresse", ephemeral=True, view=DropdownMenuQuattro())
 
 @tree.command(name="tds", description="Affiche les appariements du TDS")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def tds_command(interaction: discord.Interaction) :
     response = supabase_client.table("Joueurs_TDS") \
             .select("id, joueur:Joueurs!Joueurs_TDS_joueur_fkey(id, nom, prénom)") \
@@ -737,6 +746,7 @@ async def tds_command(interaction: discord.Interaction) :
 
 @tree.command(name="puzzle", description="Affiche le problème du jour de Chess.com")
 @app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def puzzle_command(interaction: discord.Interaction) :
     await interaction.response.defer(ephemeral=True)
     headers = {"User-Agent": "Bot Alekhine"}
@@ -776,8 +786,9 @@ class LinkButtonOnlineProfileView(discord.ui.View) :
         ))
 
 @tree.command(name="chesscom", description="Affichez les infos d'un compte Chess.com")
-@app_commands.default_permissions(administrator=True)
 @app_commands.describe(utilisateur="Nom d'utilisateur recherché")
+@app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def chesscom_command(interaction: discord.Interaction, utilisateur:str) :
     await interaction.response.defer(ephemeral=True)
 
@@ -864,8 +875,9 @@ async def chesscom_command(interaction: discord.Interaction, utilisateur:str) :
     await interaction.followup.send(embed=embed, view=chesscom_view, ephemeral=False)
 
 @tree.command(name="lichess", description="Affichez les infos d'un compte Lichess")
-@app_commands.default_permissions(administrator=True)
 @app_commands.describe(utilisateur="Nom d'utilisateur recherché")
+@app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
 async def lichess_command(interaction: discord.Interaction, utilisateur:str) :
     await interaction.response.defer(ephemeral=True)
 
