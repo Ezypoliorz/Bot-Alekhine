@@ -1,0 +1,10 @@
+    »»» Bot Alekhine «««
+    Bot Discord du club d'échecs Caen Alekhine
+    Conditions d'utilisation / Terms of service
+
+En interagissant avec le bot ou en l'ajoutant à l'utilisateur accepte les conditions suivantes :
+    - L'utilisateur reconnaît avoir pris connaissance de la Politique de Confidentialité (https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Politique%20de%20confidentialité.txt), et accepte les termes concernant la collecte des données stipulés dans ce document.
+    - Dans sa version actuelle, le Bot Alekhine n'est utilisable que par le serveur Discord Caen Alekhine, et se bloquera automatiquement dès son ajout à un autre serveur. Cette limitation ne peut être levée que par les membres de l'équipe de développement (@Dev-Bot sur le Discord Caen Alekhine)
+    - L'usage de ce bot ne doit pas, de quelque manière que ce soit, enfreindre les Conditions d'utilisation de Discord (https://discord.com/terms).
+    - Le club d'échecs Caen Alekhine, son serveur Discord Caen Alekhine, et les membres de l'équipe de développement ne pourront en aucun cas être tenus responsables d'abus réalisés par les utilisateurs via le Bot Alekhine, dans le cadre de situations ne dépendant pas directement des fonctionnalités définies par défaut.
+    - Tout utilisateur ou serveur enfreignant ces règles pourra se voir banni de l'utilisation du Bot Alekhine, ainsi que du serveur Caen Alekhine.

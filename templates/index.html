@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Alekhine - Status</title>
+    <style>
+        :root {
+            --bg: #161512;
+            --card: #262421;
+            --accent: #3498db;
+            --text: #bababa;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .club-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: -1rem;
+            border-radius: 10px;
+            filter: drop-shadow(0 0 10px rgb(0, 0, 0));
+        }
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            background-color: #2ecc71;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 8px #2ecc71;
+        }
+        h1 { color: var(--white); margin-bottom: 0.5rem; }
+        p { line-height: 1.6; }
+        .badge {
+            background: #312e2b;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid #403d39;
+        }
+        .links { margin-top: 2rem; border-top: 1px solid #403d39; padding-top: 1rem; }
+        .links a {
+            color: var(--accent);
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 0.8rem;
+            transition: opacity 0.2s;
+        }
+        .links a:hover { opacity: 0.8; text-decoration: underline; }
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 0.5rem;
+        }
+        .icon {
+            width: 32px;
+            height: 32px;
+            transition: transform 0.2s, opacity 0.2s;
+            filter: brightness(0.8);
+        }
+        .icon:hover {
+            transform: scale(1.1);
+            filter: brightness(1);
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="Logo Caen Alekhine.jpg" alt="Logo Caen Alekhine" class="club-logo">
+        <h1>Bot Alekhine</h1>
+        <p><span class="status-dot"></span> <span class="badge">Système Opérationnel</span></p>
+        <p>Le bot du club d'échecs <strong>Caen Alekhine</strong>.<br>Développé par Oscar Mazeure.</p>
+        
+        <div class="links">
+            <div style="margin-bottom: 1.5rem;">
+                <a href="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Conditions%20d'utilisation.txt" target="_blank">Conditions d'utilisation</a>
+                <a href="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Politique%20de%20confidentialité.txt" target="_blank">Politique de confidentialité</a>
+            </div>
+
+            <div class="social-icons">
+                <a href="https://github.com/Ezypoliorz/Bot-Alekhine" target="_blank">
+                    <img src="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Logo%20GitHub.png" alt="GitHub" class="icon">
+                </a>
+                <a href="https://caenalekhine.fr" target="_blank">
+                    <img src="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Icône%20site%20web.png" alt="Site Web" class="icon">
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
