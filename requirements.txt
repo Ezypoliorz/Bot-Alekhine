@@ -7,3 +7,4 @@ python-dateutil
 pandas
 xlsxwriter
 python-dotenv
+supabase
