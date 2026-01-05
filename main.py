@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client
 
-load_dotenv("Bot-Alekhine Test version.env")
+#load_dotenv("Bot-Alekhine Test version.env")
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
