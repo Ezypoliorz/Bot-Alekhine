@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Alekhine - Status</title>
+    <link rel="icon" type="image/x-icon" href="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/templates/Logo%20Caen.jpg?raw=true">
+    <title>Bot Alekhine</title>
     <style>
         :root {
             --bg: #161512;
@@ -11,7 +12,12 @@
             --accent: #3498db;
             --text: #bababa;
             --white: #ffffff;
+            --overlay: rgba(0, 0, 0, 0.8);
+            --transition-speed: 0.3s;
+            --scrollbar-bg: #1e1d1a;
+            --scrollbar-thumb: #444;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg);
@@ -21,7 +27,9 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
+
         .container {
             background-color: var(--card);
             padding: 1.5rem;
@@ -31,6 +39,7 @@
             max-width: 400px;
             width: 90%;
         }
+
         .club-logo {
             width: 80px;
             height: auto;
@@ -38,6 +47,7 @@
             border-radius: 10px;
             filter: drop-shadow(0 0 10px rgb(0, 0, 0));
         }
+
         .status-dot {
             height: 12px;
             width: 12px;
@@ -47,8 +57,10 @@
             margin-right: 8px;
             box-shadow: 0 0 8px #2ecc71;
         }
+
         h1 { color: var(--white); margin-bottom: 0.5rem; }
         p { line-height: 1.6; }
+
         .badge {
             background: #312e2b;
             padding: 4px 12px;
@@ -56,6 +68,7 @@
             font-size: 0.85rem;
             border: 1px solid #403d39;
         }
+
         .links { margin-top: 2rem; border-top: 1px solid #403d39; padding-top: 1rem; }
         .links a {
             color: var(--accent);
@@ -63,8 +76,10 @@
             margin: 0 10px;
             font-size: 0.8rem;
             transition: opacity 0.2s;
+            cursor: pointer;
         }
         .links a:hover { opacity: 0.8; text-decoration: underline; }
+        
         .social-icons {
             display: flex;
             justify-content: center;
@@ -82,9 +97,91 @@
             filter: brightness(1);
             opacity: 0.9;
         }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--overlay);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--card);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            text-align: left;
+            transform: translateY(-20px);
+            transition: transform var(--transition-speed) ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        /* Animation de sortie */
+        .modal-overlay.closing {
+            opacity: 0;
+        }
+        .modal-overlay.closing .modal-content {
+            transform: translateY(-20px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 2rem;
+            color: var(--text);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close-btn:hover { color: var(--white); }
+        .modal-content h2 { color: var(--white); margin-top: 0; }
+        .modal-content p { color: var(--text); white-space: pre-line; }
+        .modal-content {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--scrollbar-bg);
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 10px;
+            border: 2px solid var(--scrollbar-bg);
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
         <img src="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/templates/Logo%20Caen%20Alekhine.jpg?raw=true" alt="Logo Caen Alekhine" class="club-logo">
         <h1>Bot Alekhine</h1>
@@ -93,8 +190,8 @@
         
         <div class="links">
             <div style="margin-bottom: 1.5rem;">
-                <a href="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Conditions%20d'utilisation.txt?raw=true" target="_blank">Conditions d'utilisation</a>
-                <a href="https://github.com/Ezypoliorz/Bot-Alekhine/blob/main/Politique%20de%20confidentialité.txt" target="_blank">Politique de confidentialité</a>
+                <a onclick="openModal('tos')" href="#tos">Conditions d'utilisation</a>
+                <a onclick="openModal('pp')" href="#pp">Politique de confidentialité</a>
             </div>
 
             <div class="social-icons">
@@ -107,5 +204,85 @@
             </div>
         </div>
     </div>
+
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const documents = {
+            tos: {
+                title: "Conditions d'utilisation",
+                text: `<strong>En interagissant avec le bot ou en l'ajoutant à un serveur, l'utilisateur accepte les conditions suivantes :</strong>
+
+    - L'utilisateur reconnaît avoir pris connaissance de la Politique de Confidentialité, et accepte les termes concernant la collecte des données stipulés dans ce document.
+
+    - Le Bot Alekhine n'est utilisable que par le serveur Discord Caen Alekhine, et se bloquera automatiquement dès son ajout à un autre serveur. Cette limitation ne peut être levée que par les membres de l'équipe de développement (@Dev-Bot sur le Discord Caen Alekhine).
+
+    - L'usage de ce bot ne doit pas, de quelque manière que ce soit, enfreindre les Conditions d'utilisation de Discord (https://discord.com/terms).
+
+    - Le club d'échecs Caen Alekhine, son serveur Discord Caen Alekhine, et les membres de l'équipe de développement ne pourront en aucun cas être tenus responsables d'abus réalisés par les utilisateurs via le Bot Alekhine, dans le cadre de situations ne dépendant pas directement des fonctionnalités définies par défaut.
+
+    - Tout utilisateur ou serveur enfreignant ces règles pourra se voir banni de l'utilisation du Bot Alekhine, ainsi que du serveur Caen Alekhine.`
+            },
+            pp: {
+                title: "Politique de confidentialité",
+                text: `Le Bot Alekhine collecte des données sur :
+    - Le serveur : ID de serveur, nom du serveur, ID des salons, noms des salons
+    - Les utilisateurs du serveur : nom d'utilisateur, nom d'affichage
+    - Les messages : contenu de tous les messages du serveur, utlisateur l'ayant envoyé
+
+Dans le cas où le nom d'affichage de l'utilisateur est contenu dans la liste FFE des joueurs du club Caen Alekhine, des données sont récoltées et peuvent être affichées sur sa fiche FFE et fiche FIDE, accessibles publiquement.
+Ces données sont utilisées pour diverses commandes et fonctionnalités du bot :
+    - Commandes : /joueur, /top_10, /quattro, /tds, /clear
+    - Rappels : rappels Quattro et TDS
+    - Traitement et modération des messages dans le salon dédié au partage de ressources sur le serveur Caen Alekhine
+
+Ces données sont stockées dans une base de données SQL via le service de Supabase, et sont stockées sur le serveur AWS EU West 3. L'entièreté des données sont protégées par une Row Level Security (RLS) de PostgreSQL, et ne sont ainsi accessibles que par le Bot Alekhine, et ne peuvent en aucun cas être affichées ni modifiées par un tiers. Ces données sont mises à jour tous à chaque redémarrage du bot, et tous les jours à 9h 30.
+
+Des données supplémentaire sont collectées sur les comptes Chess.com et Lichess de n'importe quel utilisateur de ces plateformes, via les commandes /chesscom et /lichess. Seules les données accessibles publiquement sont collectées, et ne sont pas stockées dans les bases de données.
+
+Toutes les données collectées par le Bot Alekhine ne sont en aucun cas transmises à des tiers, et seulement à l'équipe de développement du bot (@Dev-bot & @Bureau et responsables sur le serveur Caen Alekhine) dans le cadre du développement du bot, ainsi qu'aux utilisateurs du serveur Caen Alekhine, via les commandes.
+
+Tout utilisateur peut demander la suppression de ces données ainsi que l'arrêt de leur collecte sur le serveur Discord Caen Alekhine, par message privé Discord à @ezy_27, ou par mail à oscar.mazeure@orange.fr, conformément à la RGPD.`
+            }
+        };
+
+        const overlay = document.getElementById('modalOverlay');
+        const body = document.getElementById('modalBody');
+
+        function openModal(type) {
+            const doc = documents[type];
+            if (!doc) return;
+
+            body.innerHTML = `<h2>${doc.title}</h2><p>${doc.text}</p>`;
+            
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.classList.add('active'), 10);
+        }
+
+        function closeModal() {
+            overlay.classList.remove('active');
+            overlay.classList.add('closing');
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                overlay.classList.remove('closing');
+                history.replaceState(null, null, window.location.pathname);
+            }, 300);
+        }
+
+        window.onload = function() {
+            const hash = window.location.hash.substring(1);
+            if (hash === 'tos' || hash === 'pp') openModal(hash);
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") closeModal();
+        });
+    </script>
 </body>
 </html>
