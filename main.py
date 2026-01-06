@@ -193,7 +193,7 @@ async def daily_data_update() :
         for tournament in soon_tournaments :
             embed.add_field(
                 name=f"{tournament["nom"]}",
-                value=f"{tournament["date"]} • {tournament["ville"]}\nPlus d'infos : {tournament["url"]}",
+                value=f"{tournament["date"]} • {tournament["ville"].capitalize()}\nPlus d'infos : `{tournament["url"]}`",
                 inline=False
             )
         embed.set_footer(text="Bot Caen Alekhine")
@@ -617,7 +617,7 @@ async def tournois_command(interaction: discord.Interaction, département : str 
     for index, tournament in enumerate(tournaments) :
         embed.add_field(
             name=f"{tournament["nom"]}",
-            value=f"{tournament["date"]} • {tournament["ville"]}\nPlus d'infos : {tournament["url"]}",
+            value=f"{tournament["date"]} • {tournament["ville"].capitalize()}\nPlus d'infos : `{tournament["url"]}`",
             inline=False
         )
 
@@ -852,7 +852,7 @@ async def chesscom_command(interaction: discord.Interaction, utilisateur:str) :
         urls = ""
         for streaming_platform in infos["streaming_platforms"] :
             streams += f"{streaming_platform["type"].capitalize()}, "
-            urls += f"{streaming_platform["channel_url"]}\n"
+            urls += f"`{streaming_platform["channel_url"]}`\n"
         streams = streams[:-2]
         embed.add_field(
             name=streams,
