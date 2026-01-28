@@ -952,7 +952,8 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
     log_channel = bot.get_channel(LOGS_CHANNEL_ID)  
     timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
 
-    message = f"[{timestamp}] @{interaction.user.name} - **/{interaction.command.name}**"
+    name = interaction.user.nick if interaction.user.nick else interaction.user.name
+    message = f"[{timestamp}] @{name} - **/{interaction.command.name}**"
 
     if "options" in interaction.data :
         message += " ("
@@ -1005,7 +1006,7 @@ async def on_guild_join(guild) :
         try :
             channel = guild.system_channel or next((x for x in guild.text_channels if x.permissions_for(guild.me).send_messages), None)
             if channel :
-                await channel.send("L'utiisation de ce bot est réservée au serveur Discord du club d'échecs Caen Alkhine. Il va donc immédiatement être retiré de ce serveur.\nThe use of this bot is reserved to the Discord server for the Caen Alekhine chess club. It will now automatically be removed from this server.")
+                await channel.send("L'utilisation de ce bot est réservée au serveur Discord du club d'échecs Caen Alkhine. Il va donc immédiatement être retiré de ce serveur.\nThe use of this bot is reserved to the Discord server for the Caen Alekhine chess club. It will now automatically be removed from this server.")
         except Exception :
             pass
         
