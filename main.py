@@ -18,7 +18,8 @@ import pandas as pd
 import re
 from dotenv import load_dotenv
 import requests
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
+import asyncio
 
 #load_dotenv("Bot-Alekhine Test version.env")
 
@@ -35,7 +36,12 @@ BUG_REPORT_CHANNEL_ID =  int(os.getenv("BUG_REPORT_CHANNEL_ID"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+headers_data = ClientOptions(
+    headers={
+        "User-Agent": "Bot Alekhine",
+    }
+)
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=headers_data)
 
 TIMEZONE = ZoneInfo("Europe/Paris")
 
@@ -61,6 +67,35 @@ intents.members = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 tree = bot.tree
 
+def send_request(table: str, select_query: str = "*", filters: dict = None, or_logic: str = None, order_by: str = None, desc: bool = False, limit_val: int = None):
+    query = supabase_client.table(table).select(select_query)
+    
+    timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
+    message = f"[{timestamp}] Requête envoyée à Supabase\n    Table : {table}\n    Sélection : {select_query}"
+
+    if filters :
+        message += "\n    Filtres :"
+        for column, value in filters.items():
+            message += f"\n      {column} : {value} - "
+            query = query.eq(column, value)
+        message = message[:-2]
+
+    if or_logic:
+        message += f"\n    Logique or_ : {or_logic}"
+        query = query.or_(or_logic)
+
+    if order_by:
+        message += f"\n    Tri : {order_by} ({'DESC' if desc else 'ASC'})"
+        query = query.order(order_by, desc=desc)
+
+    if limit_val is not None:
+        message += f"\n    Limite : {limit_val}"
+        query = query.limit(limit_val)
+
+    print(message)
+    
+    return query.execute().data
+
 class BotAlekhineError(app_commands.AppCommandError):
     def __init__(self, message: str):
         self.message = message
@@ -84,12 +119,10 @@ class QuattroReminderView(View) :
         user = interaction.user
         username = user.name
 
-        response = supabase_client.table("Joueurs") \
-            .select("id, nom, prénom, elo_standard, classement, actif") \
-            .eq("discord_username", username) \
-            .execute()
-        players_list = response.data
-
+        players_list = send_request(table="Joueurs",
+                                    select_query="id, nom, prénom, elo_standard, classement, actif",
+                                    filters={"discord_username" : username})
+        
         if len(players_list) == 0 :
             embed = discord.Embed(
                     title=f"Vous n'êtes pas trouvé dans la liste des joueurs",
@@ -102,11 +135,9 @@ class QuattroReminderView(View) :
         else :
             player = players_list[0]
 
-        response = supabase_client.table("Poules_Quattro") \
-            .select("id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom, elo_standard), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom, elo_standard), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom, elo_standard), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom, elo_standard)") \
-            .or_(f"joueur_1.eq.{player["id"]}, joueur_2.eq.{player["id"]}, joueur_3.eq.{player["id"]}, joueur_4.eq.{player["id"]}") \
-            .execute()
-        poules_liste = response.data
+        poules_liste = send_request(table="Poules_Quattro",
+                                    select_query="id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom, elo_standard), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom, elo_standard), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom, elo_standard), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom, elo_standard)",
+                                    or_logic=f"joueur_1.eq.{player["id"]}, joueur_2.eq.{player["id"]}, joueur_3.eq.{player["id"]}, joueur_4.eq.{player["id"]}")
 
         if len(poules_liste) == 0 :
             embed = discord.Embed(
@@ -120,11 +151,9 @@ class QuattroReminderView(View) :
         else :
             poule = poules_liste[0]
 
-        response = supabase_client.table("Matches Quattro") \
-            .select("*") \
-            .eq("id", self.ronde+1) \
-            .execute()
-        match = response.data[0]
+        matches = send_request(table="Matches Quattro",
+                               filters={"id" : self.ronde + 1})
+        match = matches[0]
 
         embed = discord.Embed(
             title=f"Votre prochain match de Quattro",
@@ -140,10 +169,11 @@ class QuattroReminderView(View) :
         embed.set_footer(text="Bot Caen Alekhine")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-@tasks.loop(time=time(hour=9, minute=30, tzinfo=TIMEZONE))
-async def daily_data_update() :    
-    players = données_ffe.fetch_players()
-    tournaments = données_ffe.fetch_tournaments()
+@tasks.loop(time=time(hour=9, minute=0, tzinfo=TIMEZONE))
+async def daily_data_update() :
+    timestamp_start = datetime.now(TIMEZONE)
+    players = await asyncio.to_thread(données_ffe.fetch_players)
+    tournaments = await asyncio.to_thread(données_ffe.fetch_tournaments)
 
     guild = bot.get_guild(GUILD_ID)
     if guild :
@@ -199,10 +229,7 @@ async def daily_data_update() :
         embed.set_footer(text="Bot Caen Alekhine")
         await channel_announcements.send(embed=embed)
 
-    response = supabase_client.table("Matches Quattro") \
-        .select("*") \
-        .execute()
-    matches = response.data
+    matches = send_request(table="Matches Quattro")
     
     posted_titles = set()
 
@@ -230,10 +257,7 @@ async def daily_data_update() :
             await channel_tds_quattro.send(embed=embed, view=quattro_reminder_view, content=f"<@&{QUATTRO_ROLE_ID}>")
             break
 
-    response = supabase_client.table("Matches TDS") \
-        .select("*") \
-        .execute()
-    matches = response.data
+    matches = send_request(table="Matches TDS")
     
     posted_titles = set()
 
@@ -274,6 +298,12 @@ async def daily_data_update() :
     embed.set_footer(text="Bot Caen Alekhine")
     channel = bot.get_channel(LOGS_CHANNEL_ID)
     await channel.send(embed=embed)
+  
+    delta = datetime.now(TIMEZONE) - timestamp_start
+    minutes, seconds = divmod(int(delta.total_seconds()), 60)
+    duration = f"{minutes:02}:{seconds:02}"
+    timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
+    print(f"[{timestamp}] Mise à jour des données effectuée - {duration}")
 
 FIRST_START = True
 @bot.event
@@ -437,12 +467,11 @@ class Top10View(View) :
 @app_commands.default_permissions(administrator=True)
 @app_commands.guild_only()
 async def top_10_command(interaction: discord.Interaction, joueurs : app_commands.Range[int, 1, 25] = 10) :
-    response = supabase_client.table("Joueurs") \
-        .select("nom, prénom, elo_standard, classement, actif") \
-        .order("classement", desc=False) \
-        .limit(joueurs*2) \
-        .execute()
-    players = response.data
+    players = send_request(table="Joueurs",
+                           select_query="nom, prénom, elo_standard, classement, actif",
+                           order_by="classement",
+                           limit_val=joueurs*2)
+
     embed = discord.Embed(
         title=f"Classement Top {joueurs} du Club",
         color=discord.Color.blue()
@@ -523,12 +552,8 @@ async def joueur_command(interaction: discord.Interaction, nom: str, prénom: st
     prénom = prénom.capitalize()
     nom = nom.upper()
 
-    response = supabase_client.table("Joueurs") \
-        .select("*") \
-        .eq("nom", nom.upper()) \
-        .eq("prénom", prénom.capitalize()) \
-        .execute()
-    players = response.data
+    players = send_request(table="Joueurs",
+                           filters={"nom" : nom.upper(), "prénom" : prénom.capitalize()})
 
     if len(players) == 0 :
         players = données_ffe.search_player(prénom=prénom, nom=nom)
@@ -589,11 +614,8 @@ class LinkButtonFFETournamentsView(discord.ui.View) :
 async def tournois_command(interaction: discord.Interaction, département : str = "14") :
     phrase_département = DEPARTEMENTS[département]["Phrase"]
     if département == "14" :
-        response = supabase_client.table("Tournois") \
-            .select("*") \
-            .limit(25) \
-            .execute()
-        tournaments = response.data
+        tournaments = send_request(table="Tournois",
+                                   limit_val=25)
         tournaments.reverse()
     else :
         tournaments = données_ffe.get_tournaments(département)
@@ -642,11 +664,10 @@ class DropdownMenuQuattro(View) :
         self.add_item(self.create_dropdown())
         
     def create_dropdown(self) :
-        response = supabase_client.table("Poules_Quattro") \
-            .select("id, nom") \
-            .order("id", desc=False) \
-            .execute()
-        poules = response.data
+        poules = send_request(table="Joueurs",
+                              select_query="id, nom",
+                              order_by="id",
+                              desc=False)
         options = []
         for poule in poules :
             options.append(discord.SelectOption(label=poule["nom"]))
@@ -663,16 +684,12 @@ class DropdownMenuQuattro(View) :
     async def callback_quattro(self, interaction : discord.Interaction) :
         await interaction.response.defer(ephemeral=True)
 
-        response = supabase_client.table("Poules_Quattro") \
-            .select("id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom)") \
-            .eq("nom", interaction.data["values"][0]) \
-            .execute()
-        poule = response.data[0]
+        poules = send_request(table="Poules_Quattro",
+                              select_query="id, nom, joueur_1:Joueurs!Poules_Quattro_joueur_1_fkey(id, nom, prénom), joueur_2:Joueurs!Poules_Quattro_joueur_2_fkey(id, nom, prénom), joueur_3:Joueurs!Poules_Quattro_joueur_3_fkey(id, nom, prénom), joueur_4:Joueurs!Poules_Quattro_joueur_4_fkey(id, nom, prénom)",
+                              filters={"nom" : interaction.data["values"][0]})
+        poule = poules[0]
         
-        response = supabase_client.table("Matches Quattro") \
-            .select("*") \
-            .execute()
-        matches = response.data
+        matches = send_request(table="Matches Quattro")
 
         embed = discord.Embed(
             title=f"Appariements du {poule["nom"]}",
@@ -705,15 +722,10 @@ async def quattro_command(interaction: discord.Interaction) :
 @app_commands.default_permissions(administrator=True)
 @app_commands.guild_only()
 async def tds_command(interaction: discord.Interaction) :
-    response = supabase_client.table("Joueurs_TDS") \
-            .select("id, joueur:Joueurs!Joueurs_TDS_joueur_fkey(id, nom, prénom)") \
-            .execute()
-    joueurs = response.data
+    joueurs = send_request(table="Joueurs_TDS",
+                           select_query="id, joueur:Joueurs!Joueurs_TDS_joueur_fkey(id, nom, prénom)")
 
-    response = supabase_client.table("Matches TDS") \
-        .select("*") \
-        .execute()
-    matches = response.data
+    matches = send_request(table="Matches TDS")
 
     embed = discord.Embed(
             title=f"Joueurs TDS",
@@ -962,6 +974,7 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
         message = f"{message[:-3]})"
 
     await log_channel.send(message)
+    print(message.replace("*", ""))
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
@@ -1013,6 +1026,7 @@ async def on_guild_join(guild) :
         await guild.leave()
         channel = bot.get_channel(LOGS_CHANNEL_ID)
         await channel.send(f"Le bot a quitté un serveur Discord non autorisé ({guild.name} - {guild.id})")
+        print(f"Le bot a quitté un serveur Discord non autorisé ({guild.name} - {guild.id})")
 
 @bot.check
 async def is_in_authorized_guild(ctx) :
