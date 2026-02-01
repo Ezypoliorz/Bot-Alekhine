@@ -337,7 +337,7 @@ async def daily_data_update() :
     
     embed = discord.Embed(
         title="Bot up and running",
-        description=f"Connecté comme {bot.user.split("#")[0]} (#{bot.user.split("#")[1]}) - ID : {bot.user.id}",
+        description=f"Connecté comme {bot.user} - ID : {bot.user.id}",
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
