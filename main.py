@@ -20,8 +20,11 @@ from dotenv import load_dotenv
 import requests
 from supabase import create_client, Client, ClientOptions
 import asyncio
+import logging
+import sys
+import click
 
-#load_dotenv("Bot-Alekhine Test version.env")
+load_dotenv("Bot-Alekhine Test version.env")
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
@@ -44,6 +47,48 @@ headers_data = ClientOptions(
 supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=headers_data)
 
 TIMEZONE = ZoneInfo("Europe/Paris")
+def timetz(*args) :
+    return datetime.now(TIMEZONE).timetuple()
+
+logging.Formatter.converter = timetz
+
+class ColoredFormatter(logging.Formatter):
+    GREY = "\x1b[38;20m"
+    BLUE = "\x1b[34m"
+    ORANGE = "\x1b[33m"
+    RED = "\x1b[31m"
+    RESET = "\x1b[0m"
+
+    def format(self, record):
+        level_colors = {
+            logging.INFO: self.BLUE,
+            logging.WARNING: self.ORANGE,
+            logging.ERROR: self.RED,
+            logging.CRITICAL: self.RED
+        }
+        color = level_colors.get(record.levelno, self.RESET)
+
+        timestamp = self.formatTime(record, self.datefmt)
+        
+        log_fmt = f"{self.GREY}{timestamp}{self.RESET} {color}[{record.levelname}]{self.RESET} %(message)s"
+        
+        formatter = logging.Formatter(log_fmt, datefmt=self.datefmt)
+        return formatter.format(record)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(ColoredFormatter(datefmt='%d/%m/%Y %H:%M:%S'))
+
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[console_handler],
+    force=True
+)
+
+logger = logging.getLogger(__name__)
+
+logging.getLogger('discord').setLevel(logging.INFO)
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 with open("départements.json", "r", encoding="utf-8") as fichier :
     DEPARTEMENTS = json.load(fichier)
@@ -92,7 +137,7 @@ def send_request(table: str, select_query: str = "*", filters: dict = None, or_l
         message += f"\n    Limite : {limit_val}"
         query = query.limit(limit_val)
 
-    print(message)
+    logger.info(message)
     
     return query.execute().data
 
@@ -292,7 +337,7 @@ async def daily_data_update() :
     
     embed = discord.Embed(
         title="Bot up and running",
-        description=f"Connected as {bot.user} - ID : {bot.user.id}",
+        description=f"Connecté comme {bot.user.split("#")[0]} (#{bot.user.split("#")[1]}) - ID : {bot.user.id}",
         color=discord.Color.green()
     )
     embed.set_footer(text="Bot Caen Alekhine")
@@ -302,8 +347,7 @@ async def daily_data_update() :
     delta = datetime.now(TIMEZONE) - timestamp_start
     minutes, seconds = divmod(int(delta.total_seconds()), 60)
     duration = f"{minutes:02}:{seconds:02}"
-    timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
-    print(f"[{timestamp}] Mise à jour des données effectuée - {duration}")
+    logger.info(f"Mise à jour des données effectuée - {duration}")
 
 FIRST_START = True
 @bot.event
@@ -319,7 +363,7 @@ async def on_ready() :
     try :
         synced = await tree.sync()
     except Exception as e :
-        print(e)
+        logger.error(e)
     
     await bot.change_presence(activity=discord.Game(name="Bot du club Caen Alekhine"))
 
@@ -336,6 +380,12 @@ def run_server() :
         return render_template("index.html")
 
     port = int(os.environ.get("PORT", 8080))
+
+    def secho(text, file=None, nl=None, err=None, color=None, **styles):
+        pass
+    click.echo = secho
+    click.secho = secho
+
     app.run(host="0.0.0.0", port=port)
 
 @tree.command(name="ping", description="Répond avec la latence du bot")
@@ -974,7 +1024,7 @@ async def on_app_command_completion(interaction: discord.Interaction, command: a
         message = f"{message[:-3]})"
 
     await log_channel.send(message)
-    print(message.replace("*", ""))
+    logger.info(message.replace("*", "").split("] ")[1])
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError) :
@@ -1011,6 +1061,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         )
         embed.set_footer(text="Bot Caen Alekhine")
         await channel.send(content=f"<@&{DEV_BOT_ROLE_ID}>", embed=embed)
+        logger.error(message)
         return
         
 @bot.event
@@ -1026,7 +1077,7 @@ async def on_guild_join(guild) :
         await guild.leave()
         channel = bot.get_channel(LOGS_CHANNEL_ID)
         await channel.send(f"Le bot a quitté un serveur Discord non autorisé ({guild.name} - {guild.id})")
-        print(f"Le bot a quitté un serveur Discord non autorisé ({guild.name} - {guild.id})")
+        logger.warning(f"Le bot a quitté un serveur Discord non autorisé ({guild.name} - {guild.id})")
 
 @bot.check
 async def is_in_authorized_guild(ctx) :
@@ -1039,4 +1090,4 @@ if __name__ == "__main__" :
     t = threading.Thread(target=run_server)
     t.start()
 
-    bot.run(DISCORD_TOKEN)
+    bot.run(DISCORD_TOKEN, log_handler=None)
