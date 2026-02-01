@@ -116,7 +116,7 @@ def send_request(table: str, select_query: str = "*", filters: dict = None, or_l
     query = supabase_client.table(table).select(select_query)
     
     timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
-    message = f"[{timestamp}] Requête envoyée à Supabase\n    Table : {table}\n    Sélection : {select_query}"
+    message = f"Requête envoyée à Supabase\n    Table : {table}\n    Sélection : {select_query}"
 
     if filters :
         message += "\n    Filtres :"
