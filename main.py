@@ -24,7 +24,7 @@ import logging
 import sys
 import click
 
-load_dotenv("Bot-Alekhine Test version.env")
+#load_dotenv("Bot-Alekhine Test version.env")
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
@@ -44,7 +44,7 @@ headers_data = ClientOptions(
         "User-Agent": "Bot Alekhine",
     }
 )
-supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=headers_data)
+supabase_client : Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=headers_data)
 
 TIMEZONE = ZoneInfo("Europe/Paris")
 def timetz(*args) :
@@ -116,7 +116,7 @@ def send_request(table: str, select_query: str = "*", filters: dict = None, or_l
     query = supabase_client.table(table).select(select_query)
     
     timestamp = datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M:%S")
-    message = f"Requête envoyée à Supabase\n    Table : {table}\n    Sélection : {select_query}"
+    message = f"Requête GET envoyée à Supabase\n    Table : {table}\n    Sélection : {select_query}"
 
     if filters :
         message += "\n    Filtres :"
@@ -232,8 +232,13 @@ async def daily_data_update() :
                         break
 
     supabase_client.table("Joueurs").upsert(players).execute()
+    message = f"Requête POST envoyée à Supabase (Table : Joueurs - {len(players)} élements)"
+    logger.info(message)
+
     supabase_client.table("Tournois").upsert(tournaments).execute()
-    
+    message = f"Requête POST envoyée à Supabase (Table : Tournois - {len(tournaments)} élements)"
+    logger.info(message)
+
     channel_announcements = bot.get_channel(ANNOUNCEMENTS_CHANNEL_ID)
     channel_tds_quattro = bot.get_channel(TDS_QUATTRO_CHANNEL_ID)
     today = date.today()
@@ -369,6 +374,7 @@ async def on_ready() :
 
     if not daily_data_update.is_running():
         await daily_data_update()
+        daily_data_update.start()
 
     FIRST_START = False
 
