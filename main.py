@@ -339,15 +339,6 @@ async def daily_data_update() :
             embed.set_footer(text="Bot Caen Alekhine")
             await channel_tds_quattro.send(embed=embed)
             break
-    
-    embed = discord.Embed(
-        title="Bot up and running",
-        description=f"Connecté comme {bot.user} - ID : {bot.user.id}",
-        color=discord.Color.green()
-    )
-    embed.set_footer(text="Bot Caen Alekhine")
-    channel = bot.get_channel(LOGS_CHANNEL_ID)
-    await channel.send(embed=embed)
   
     delta = datetime.now(TIMEZONE) - timestamp_start
     minutes, seconds = divmod(int(delta.total_seconds()), 60)
@@ -375,6 +366,15 @@ async def on_ready() :
     if not daily_data_update.is_running():
         await daily_data_update()
         daily_data_update.start()
+    
+    embed = discord.Embed(
+        title="Bot up and running",
+        description=f"Connecté comme {bot.user} - ID : {bot.user.id}",
+        color=discord.Color.green()
+    )
+    embed.set_footer(text="Bot Caen Alekhine")
+    channel = bot.get_channel(LOGS_CHANNEL_ID)
+    await channel.send(embed=embed)
 
     FIRST_START = False
 
