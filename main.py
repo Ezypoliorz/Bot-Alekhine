@@ -157,9 +157,8 @@ class QuattroReminderView(View) :
         custom_id="quattro_reminder_button",
     )
     async def quattro_reminder_button_callback(self, interaction: discord.Interaction, button: discord.ui.Button) :
-        if self.ronde is None :
-            title = interaction.message.embeds[0].title
-            self.ronde = int(re.search(r"Ronde (\d+)", title).group(1)) - 1
+        title = interaction.message.embeds[0].title
+        self.ronde = int(re.search(r"Ronde (\d+)", title).group(1))
             
         user = interaction.user
         username = user.name
