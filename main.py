@@ -197,7 +197,7 @@ class QuattroReminderView(View) :
             poule = poules_liste[0]
 
         matches = send_request(table="Matches Quattro",
-                               filters={"id" : self.ronde + 1})
+                               filters={"id" : self.ronde})
         match = matches[0]
 
         embed = discord.Embed(
@@ -207,7 +207,7 @@ class QuattroReminderView(View) :
 
         embed.add_field(
             name=f"{poule[match["blancs_1"]]["nom"]} {poule[match["blancs_1"]]["prénom"]} ({poule[match["blancs_1"]]["elo_standard"]}) - {poule[match["noirs_1"]]["nom"]} {poule[match["noirs_1"]]["prénom"]} ({poule[match["noirs_1"]]["elo_standard"]})" if player["id"] in [poule[match["blancs_1"]]["id"], poule[match["noirs_1"]]["id"]] else f"{poule[match["blancs_2"]]["nom"]} {poule[match["blancs_2"]]["prénom"]} ({poule[match["blancs_2"]]["elo_standard"]}) - {poule[match["noirs_2"]]["nom"]} {poule[match["noirs_2"]]["prénom"]} ({poule[match["noirs_2"]]["elo_standard"]})",
-            value=f"Ronde {self.ronde+1} du {poule["nom"]}\nDate : **{match["date"]}**",
+            value=f"Ronde {self.ronde} du {poule["nom"]}\nDate : **{match["date"]}**",
             inline=False
         )
 
