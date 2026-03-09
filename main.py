@@ -719,10 +719,11 @@ class DropdownMenuQuattro(View) :
         self.add_item(self.create_dropdown())
         
     def create_dropdown(self) :
-        poules = send_request(table="Joueurs",
+        poules = send_request(table="Poules_Quattro",
                               select_query="id, nom",
                               order_by="id",
-                              desc=False)
+                              desc=False,
+                              limit_val=25)
         options = []
         for poule in poules :
             options.append(discord.SelectOption(label=poule["nom"]))
@@ -1058,7 +1059,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         else :
             await interaction.response.send_message(embed=embed, ephemeral=True)
         channel = bot.get_channel(LOGS_CHANNEL_ID)
-        message = error.message if isinstance(error, app_commands.BotAlekhine) else error
+        message = error.message if isinstance(error, app_commands.BotAlekhineError) else error
         embed = discord.Embed(
             title="Une erreur est survenue ",
             description=f"**Erreur :**\n{message}",
